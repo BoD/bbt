@@ -25,7 +25,7 @@ The remote file is a very simple json file of this form:
 					"title": "Bookmark 1 in folder 1",
 					"url": "https://google.com"
 				},
-				{
+                {
                     "title": "Bookmark 2 in folder 1",
                     "url": "https://microsoft.com"
                 }
