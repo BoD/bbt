@@ -1,44 +1,5 @@
 'use strict';
 
-async function onSyncEnabledChanged(event) {
-    var syncEnabled = event.target.checked;
-    if (syncEnabled) {
-        chrome.browserAction.setBadgeText({text: ""});
-    } else {
-        chrome.browserAction.setBadgeText({text: "OFF"});
-        chrome.browserAction.setBadgeBackgroundColor({color: "#808080"});
-    }
-    var settings = await getSettings();
-    settings.syncEnabled = syncEnabled;
-    chrome.storage.sync.set({settings: settings});
-}
-
-/*
-function clearAlarm() {
-  chrome.browserAction.setBadgeText({text: ''});
-  chrome.alarms.clearAll();
-  window.close();
-}
-*/
-
-function getSettings() {
-    return new Promise(
-        resolve => {
-            chrome.storage.sync.get("settings",
-                function(items) {
-                    var settings = items.settings;
-
-                    // Default values
-                    if (settings.syncEnabled === undefined) settings.syncEnabled = true;
-                    if (settings.syncItems === undefined) settings.syncItems = {"Sample": "https://jraf.org/static/tmp/bbt/bookmarks.json"};
-
-                    resolve(settings)
-                }
-            );
-        }
-    )
-}
-
 async function populateTable() {
     var settings = await getSettings();
     console.log(settings);
@@ -69,9 +30,9 @@ async function populateTable() {
 
     tableHtml += `
     <tr>
-        <td><input class="input" type="text" placeholder="Folder name"></td>
-        <td><input class="input url" type="text" placeholder="Remote bookmarks URL"></td>
-        <td><button type="button" onclick="onAddClick();">Add</button>
+        <td><input class="input" type="text" placeholder="Folder name" id="inputFolderName"></td>
+        <td><input class="input url" type="text" placeholder="Remote bookmarks URL" id="inputUrl"></td>
+        <td><button type="button" id="btnAdd">Add</button>
     </tr>
     `;
 
@@ -82,15 +43,25 @@ async function populateTable() {
             document.getElementById("btnRemove_" + key).addEventListener("click", onRemoveClicked);
         }
     );
-
     document.getElementById("chkSyncEnabled").addEventListener("change", onSyncEnabledChanged);
+    document.getElementById("btnAdd").addEventListener("click", onAddClicked);
 }
 
-function onRemoveClicked(event) {
-    removeSyncItem(event.target.getAttribute("value"));
+async function onSyncEnabledChanged(event) {
+    var syncEnabled = event.target.checked;
+    var settings = await getSettings();
+    settings.syncEnabled = syncEnabled;
+    chrome.storage.sync.set(
+        {
+            settings: settings
+        }, function() {
+            onSettingsChanged();
+        }
+    );
 }
 
-async function removeSyncItem(folderName) {
+async function onRemoveClicked(event) {
+    var folderName = event.target.getAttribute("value");
     var settings = await getSettings();
     delete settings.syncItems[folderName];
     chrome.storage.sync.set(
@@ -98,6 +69,22 @@ async function removeSyncItem(folderName) {
             settings: settings
         }, function() {
             populateTable();
+            onSettingsChanged();
+        }
+    );
+}
+
+async function onAddClicked(event) {
+    var folderName = document.getElementById("inputFolderName").value;
+    var url = document.getElementById("inputUrl").value;
+    var settings = await getSettings();
+    settings.syncItems[folderName] = url;
+    chrome.storage.sync.set(
+        {
+            settings: settings
+        }, function() {
+            populateTable();
+            onSettingsChanged();
         }
     );
 }

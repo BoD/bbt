@@ -13,10 +13,13 @@
         "bookmarks",
         "alarms",
         "storage",
-        "https://JRAF.org/"
+        "*://*/"
     ],
     "background": {
-        "scripts": ["main.js"],
+        "scripts": [
+            "library.js",
+            "main.js"
+        ],
         "persistent": false
     },
     "browser_action": {
