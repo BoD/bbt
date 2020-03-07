@@ -1,0 +1,14 @@
+{
+    "name": "BoD's Bookmark Tool",
+    "version": "1.0.0",
+    "description": "BoD's Bookmark Tool",
+    "permissions": [
+        "bookmarks",
+        "https://JRAF.org/"
+    ],
+    "background": {
+        "scripts": ["main.js"],
+        "persistent": false
+    },
+    "manifest_version": 2
+}
