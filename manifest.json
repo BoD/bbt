@@ -4,6 +4,7 @@
     "description": "BoD's Bookmark Tool",
     "permissions": [
         "bookmarks",
+        "alarms",
         "https://JRAF.org/"
     ],
     "background": {

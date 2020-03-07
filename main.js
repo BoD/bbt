@@ -1,23 +1,41 @@
 'use strict';
 
 chrome.runtime.onInstalled.addListener(
-    async function() {
+    function() {
         console.log("Hello, World!");
-        var bbtFolder = await findFolder("bbt");
-        if (bbtFolder == null) {
-            console.log("Could not find bbt folder")
-            return;
-        }
-        await emptyFolder(bbtFolder);
-        var bookmarks = await fetchRemoteBookmarks();
-        if (bookmarks == null) {
-            console.log("Could not fetch remote bookmarks")
-            return;
-        }
-        console.log("Remote bookmarks: %O", bookmarks);
-        populateBookmarks(bbtFolder, bookmarks.bookmarks);
+        syncFolder("bbt", "https://jraf.org/static/tmp/bbt/bookmarks.json");
+
+        chrome.alarms.create(
+            "BoD's Bookmark Tool", {
+                "periodInMinutes": 5
+            }
+        );
+        chrome.alarms.onAlarm.addListener(
+            function(alarm) {
+                syncFolder("bbt", "https://jraf.org/static/tmp/bbt/bookmarks.json");
+            }
+        );
+
     }
 );
+
+async function syncFolder(folderName, remoteBookmarksUrl) {
+    console.log("Syncing " + folderName + " to remoteBookmarksUrl...")
+    var folder = await findFolder(folderName);
+    if (folder == null) {
+        console.log("Could not find folder " + folderName)
+        return;
+    }
+    await emptyFolder(folder);
+    var bookmarks = await fetchRemoteBookmarks(remoteBookmarksUrl);
+    if (bookmarks == null) {
+        console.log("Could not fetch remote bookmarks")
+        return;
+    }
+    console.log("Remote bookmarks: %O", bookmarks);
+    await populateBookmarks(folder, bookmarks.bookmarks);
+    console.log("Sync finished")
+}
 
 function findFolder(folderName) {
     return new Promise(
@@ -67,10 +85,10 @@ function emptyFolder(folder) {
     );
 }
 
-function fetchRemoteBookmarks() {
+function fetchRemoteBookmarks(remoteBookmarksUrl) {
     console.log("Fetching bookmarks from remote");
     return fetch(
-        "https://jraf.org/static/tmp/bbt/bookmarks.json", {
+        remoteBookmarksUrl, {
             "cache": "no-cache"
         }
     ).then(
@@ -81,30 +99,44 @@ function fetchRemoteBookmarks() {
 }
 
 function populateBookmarks(folder, bookmarks) {
-    bookmarks.forEach(
-        (bookmark, i) => {
-            if (bookmark.url != null) {
-                // Bookmark
-                chrome.bookmarks.create(
-                    {
-                        "parentId": folder.id,
-                        "title": bookmark.title,
-                        "url": bookmark.url
+    return new Promise(
+        resolve => {
+            var childCount = bookmarks.length
+            if (childCount == 0) resolve();
+            bookmarks.forEach(
+                (bookmark, i) => {
+                    if (bookmark.url != null) {
+                        // Bookmark
+                        chrome.bookmarks.create(
+                            {
+                                "parentId": folder.id,
+                                "title": bookmark.title,
+                                "url": bookmark.url
+                            },
+                            function() {
+                                if (i == childCount - 1) {
+                                    resolve();
+                                }
+                            }
+                        );
+                    } else {
+                        // Folder
+                        chrome.bookmarks.create(
+                            {
+                                "parentId": folder.id,
+                                "title": bookmark.title,
+                            },
+                            async function(createdFolder) {
+                                // Recurse
+                                await populateBookmarks(createdFolder, bookmark.bookmarks);
+                                if (i == childCount - 1) {
+                                    resolve();
+                                }
+                            }
+                        );
                     }
-                );
-            } else {
-                // Folder
-                chrome.bookmarks.create(
-                    {
-                        "parentId": folder.id,
-                        "title": bookmark.title,
-                    },
-                    function(createdFolder) {
-                        // Recurse
-                        populateBookmarks(createdFolder, bookmark.bookmarks);
-                    }
-                );
-            }
+                }
+            );
         }
     );
 }
