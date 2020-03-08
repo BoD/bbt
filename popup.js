@@ -2,8 +2,6 @@
 
 async function populateTable() {
     var settings = await getSettings();
-    console.log(settings);
-
     var syncEnabledHtml = settings.syncEnabled ? "checked" : "";
 
     var tableHtml = `

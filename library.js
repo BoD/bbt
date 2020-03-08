@@ -1,12 +1,18 @@
 'use strict';
 
+function log() {
+    chrome.extension.getBackgroundPage().console.log.apply(this, arguments);
+}
+
 async function onSettingsChanged() {
     var settings = await getSettings();
     if (settings.syncEnabled) {
+        log("Enable sync");
         syncFolders();
         startScheduling();
         chrome.browserAction.setBadgeText({text: ""});
     } else {
+        log("Disable sync");
         stopScheduling();
         chrome.browserAction.setBadgeText({text: "OFF"});
         chrome.browserAction.setBadgeBackgroundColor({color: "#808080"});
@@ -21,10 +27,11 @@ function getSettings() {
                     var settings = items.settings;
 
                     // Default values
+                    if (settings === undefined) settings = {};
                     if (settings.syncEnabled === undefined) settings.syncEnabled = true;
                     if (settings.syncItems === undefined) settings.syncItems = {"Sample": "https://jraf.org/static/tmp/bbt/bookmarks.json"};
 
-                    resolve(settings)
+                    resolve(settings);
                 }
             );
         }
@@ -34,7 +41,7 @@ function getSettings() {
 function startScheduling() {
     chrome.alarms.create(
         "BoD's Bookmark Tool", {
-            "periodInMinutes": 5
+            "periodInMinutes": 10
         }
     );
 }
@@ -42,10 +49,10 @@ function startScheduling() {
 
 function stopScheduling() {
     chrome.alarms.clearAll();
-    window.close();
 }
 
 async function syncFolders() {
+    log("Start syncing...")
     var settings = await getSettings();
     Object.keys(settings.syncItems).forEach(
         (folderName, i) => {
@@ -56,21 +63,21 @@ async function syncFolders() {
 }
 
 async function syncFolder(folderName, remoteBookmarksUrl) {
-    console.log("Syncing " + folderName + " to remoteBookmarksUrl...")
+    log("Syncing " + folderName + " to " + remoteBookmarksUrl);
     var folder = await findFolder(folderName);
     if (folder == null) {
-        console.log("Could not find folder " + folderName)
+        log("Could not find folder " + folderName);
         return;
     }
     await emptyFolder(folder);
     var bookmarks = await fetchRemoteBookmarks(remoteBookmarksUrl);
     if (bookmarks == null) {
-        console.log("Could not fetch remote bookmarks")
+        log("Could not fetch remote bookmarks");
         return;
     }
-    console.log("Remote bookmarks: %O", bookmarks);
+    log("Remote bookmarks: %O", bookmarks);
     await populateBookmarks(folder, bookmarks.bookmarks);
-    console.log("Sync finished")
+    log("Finished sync of " +folderName);
 }
 
 function findFolder(folderName) {
@@ -97,12 +104,12 @@ function findFolder(folderName) {
 }
 
 function emptyFolder(folder) {
-    console.log("Emptying folder %O", folder);
+    log("Emptying folder %O", folder);
     return new Promise(
         resolve => {
             chrome.bookmarks.getChildren(folder.id,
                 function (children) {
-                    var childCount = children.length
+                    var childCount = children.length;
                     if (childCount == 0) resolve();
                     children.forEach(
                         (child, i) => {
@@ -122,7 +129,7 @@ function emptyFolder(folder) {
 }
 
 function fetchRemoteBookmarks(remoteBookmarksUrl) {
-    console.log("Fetching bookmarks from remote");
+    log("Fetching bookmarks from remote");
     return fetch(
         remoteBookmarksUrl, {
             "cache": "no-cache"
@@ -131,13 +138,18 @@ function fetchRemoteBookmarks(remoteBookmarksUrl) {
         (response) => {
             return response.json();
         }
+    ).catch(
+        function(error) {
+            log("Could not fetch from remote", error);
+            return {};
+        }
     );
 }
 
 function populateBookmarks(folder, bookmarks) {
     return new Promise(
         resolve => {
-            var childCount = bookmarks.length
+            var childCount = bookmarks.length;
             if (childCount == 0) resolve();
             bookmarks.forEach(
                 (bookmark, i) => {
