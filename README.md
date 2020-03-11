@@ -4,7 +4,7 @@ This very small and simple extension allows you to synchronize any bookmark fold
 
 ## Setup
 
-The extension is available at the Chrome Web Store (publication pending!).
+The extension is available at the Chrome Web Store [here](https://chrome.google.com/webstore/detail/plhhpanklegnkjipjebhdbcfdjdhkpfb).
 
 ## Remote file format
 
