@@ -1,5 +1,7 @@
 'use strict';
 
+const syncPeriodInMinutes = 15;
+
 function log() {
     if (typeof arguments[0] === 'string') {
         arguments[0] = new Date().toISOString() + " - " + arguments[0];
@@ -10,12 +12,12 @@ function log() {
 async function onSettingsChanged() {
     var settings = await getSettings();
     if (settings.syncEnabled) {
-        log("Enable sync");
+        log("Sync enabled, scheduled every %d minutes", syncPeriodInMinutes);
         syncFolders();
         startScheduling();
         chrome.browserAction.setBadgeText({ text: "" });
     } else {
-        log("Disable sync");
+        log("Sync disabled");
         stopScheduling();
         chrome.browserAction.setBadgeText({ text: "OFF" });
         chrome.browserAction.setBadgeBackgroundColor({ color: "#808080" });
@@ -44,7 +46,7 @@ function getSettings() {
 function startScheduling() {
     chrome.alarms.create(
         "BoD's Bookmark Tool", {
-        "periodInMinutes": 1
+        "periodInMinutes": syncPeriodInMinutes
     });
 }
 
