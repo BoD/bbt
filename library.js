@@ -1,6 +1,9 @@
 'use strict';
 
 function log() {
+    if (typeof arguments[0] === 'string') {
+        arguments[0] = new Date().toISOString() + " - " + arguments[0];
+    }
     chrome.extension.getBackgroundPage().console.log.apply(this, arguments);
 }
 
@@ -10,12 +13,12 @@ async function onSettingsChanged() {
         log("Enable sync");
         syncFolders();
         startScheduling();
-        chrome.browserAction.setBadgeText({text: ""});
+        chrome.browserAction.setBadgeText({ text: "" });
     } else {
         log("Disable sync");
         stopScheduling();
-        chrome.browserAction.setBadgeText({text: "OFF"});
-        chrome.browserAction.setBadgeBackgroundColor({color: "#808080"});
+        chrome.browserAction.setBadgeText({ text: "OFF" });
+        chrome.browserAction.setBadgeBackgroundColor({ color: "#808080" });
     }
 }
 
@@ -23,13 +26,13 @@ function getSettings() {
     return new Promise(
         resolve => {
             chrome.storage.sync.get("settings",
-                function(items) {
+                function (items) {
                     var settings = items.settings;
 
                     // Default values
                     if (settings === undefined) settings = {};
                     if (settings.syncEnabled === undefined) settings.syncEnabled = true;
-                    if (settings.syncItems === undefined) settings.syncItems = {"Sample": "https://jraf.org/static/tmp/bbt/bookmarks.json"};
+                    if (settings.syncItems === undefined) settings.syncItems = { "Sample": "https://jraf.org/static/tmp/bbt/bookmarks.json" };
 
                     resolve(settings);
                 }
@@ -41,9 +44,8 @@ function getSettings() {
 function startScheduling() {
     chrome.alarms.create(
         "BoD's Bookmark Tool", {
-            "periodInMinutes": 10
-        }
-    );
+        "periodInMinutes": 1
+    });
 }
 
 
@@ -52,59 +54,63 @@ function stopScheduling() {
 }
 
 async function syncFolders() {
-    log("Start syncing...")
+    log("Start syncing...");
     var settings = await getSettings();
-    Object.keys(settings.syncItems).forEach(
-        (folderName, i) => {
-            var remoteBookmarksUrl = settings.syncItems[folderName];
-            syncFolder(folderName, remoteBookmarksUrl);
+    for (const folderName of Object.keys(settings.syncItems)) {
+        var remoteBookmarksUrl = settings.syncItems[folderName];
+        const ok = await syncFolder(folderName, remoteBookmarksUrl);
+        if (ok) {
+            log("Finished sync of '%s' successfully", folderName);
+        } else {
+            log("Finished sync of '%s' with error", folderName);
         }
-    )
+    }
+    log("Sync finished");
+    log("");
 }
 
 async function syncFolder(folderName, remoteBookmarksUrl) {
-    log("Syncing " + folderName + " to " + remoteBookmarksUrl);
+    log("Syncing '%s' to %s", folderName, remoteBookmarksUrl);
     var folder = await findFolder(folderName);
     if (folder == null) {
-        log("Could not find folder " + folderName);
-        return;
+        log("Could not find folder '%s'", folderName);
+        return false;
     }
-    await emptyFolder(folder);
     var bookmarks = await fetchRemoteBookmarks(remoteBookmarksUrl);
     if (bookmarks == null) {
-        log("Could not fetch remote bookmarks");
-        return;
+        log("Could not fetch remote bookmarks from %s for folder '%s'", remoteBookmarksUrl, folderName);
+        return false;
     }
-    log("Remote bookmarks: %O", bookmarks);
-    await populateBookmarks(folder, bookmarks.bookmarks);
-    log("Finished sync of " +folderName);
+    log("Fetched object: %O", bookmarks);
+    const bookmarkObject = bookmarks.bookmarks;
+    if (bookmarkObject == null) {
+        log("Fetched object doesn't seem to be in a compatible `bookmarks` format");
+        return false;
+    }
+    await emptyFolder(folder);
+    log("Populating folder %s", folder.title);
+    await populateFolder(folder, bookmarkObject);
+    return true;
 }
 
 function findFolder(folderName) {
     return new Promise(
         resolve => {
-            chrome.bookmarks.search({
-                    "title": folderName,
-                    "url": null
-                },
-                function(bookmarkTreeNodes) {
-                    bookmarkTreeNodes.forEach(
-                        (bookmarkTreeNode, i) => {
-                            if (bookmarkTreeNode.url == null) {
-                                resolve(bookmarkTreeNode);
-                                return;
-                            }
-                        }
-                    );
-                    resolve(null);
-                }
-            );
+            chrome.bookmarks.search({}, function (bookmarkTreeNodes) {
+                bookmarkTreeNodes.forEach(bookmarkTreeNode => {
+                    if (bookmarkTreeNode.title.toUpperCase() === folderName.toUpperCase() && bookmarkTreeNode.url == null) {
+                        resolve(bookmarkTreeNode);
+                        return;
+                    }
+                });
+                resolve(null);
+            });
         }
     );
 }
 
 function emptyFolder(folder) {
-    log("Emptying folder %O", folder);
+    log("Emptying folder %s", folder.title);
     return new Promise(
         resolve => {
             chrome.bookmarks.getChildren(folder.id,
@@ -114,7 +120,7 @@ function emptyFolder(folder) {
                     children.forEach(
                         (child, i) => {
                             chrome.bookmarks.removeTree(child.id,
-                                function() {
+                                function () {
                                     if (i == childCount - 1) {
                                         resolve();
                                     }
@@ -129,24 +135,21 @@ function emptyFolder(folder) {
 }
 
 function fetchRemoteBookmarks(remoteBookmarksUrl) {
-    log("Fetching bookmarks from remote");
+    log("Fetching bookmarks from remote %s", remoteBookmarksUrl);
     return fetch(
         remoteBookmarksUrl, {
-            "cache": "no-cache"
-        }
-    ).then(
-        (response) => {
-            return response.json();
-        }
-    ).catch(
-        function(error) {
-            log("Could not fetch from remote", error);
-            return {};
+        "cache": "no-cache"
+    }).then((response) => {
+        return response.json();
+    }).catch(
+        function (error) {
+            log("Could not fetch from remote %s: %O", remoteBookmarksUrl, error);
+            return null;
         }
     );
 }
 
-function populateBookmarks(folder, bookmarks) {
+function populateFolder(folder, bookmarks) {
     return new Promise(
         resolve => {
             var childCount = bookmarks.length;
@@ -161,7 +164,7 @@ function populateBookmarks(folder, bookmarks) {
                                 "title": bookmark.title,
                                 "url": bookmark.url
                             },
-                            function() {
+                            function () {
                                 if (i == childCount - 1) {
                                     resolve();
                                 }
@@ -174,9 +177,9 @@ function populateBookmarks(folder, bookmarks) {
                                 "parentId": folder.id,
                                 "title": bookmark.title,
                             },
-                            async function(createdFolder) {
+                            async function (createdFolder) {
                                 // Recurse
-                                await populateBookmarks(createdFolder, bookmark.bookmarks);
+                                await populateFolder(createdFolder, bookmark.bookmarks);
                                 if (i == childCount - 1) {
                                     resolve();
                                 }
