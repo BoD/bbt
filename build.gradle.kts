@@ -1,4 +1,4 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.kotlin.gradle.tasks.Kotlin2JsCompile
 
 plugins {
     id("org.jetbrains.kotlin.js") version "1.3.71"
@@ -19,7 +19,7 @@ tasks {
     }
 }
 
-tasks.withType<KotlinCompile>().all {
+tasks.withType<Kotlin2JsCompile>().all {
     kotlinOptions.freeCompilerArgs += "-Xopt-in=kotlinx.coroutines.ExperimentalCoroutinesApi"
 }
 
@@ -29,4 +29,6 @@ dependencies {
 
 }
 
-kotlin.target.browser { }
+kotlin.target.browser {}
+
+// Run `./gradlew browserDevelopmentWebpack` or `./gradlew browserProductionWebpack` to build

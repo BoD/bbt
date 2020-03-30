@@ -23,23 +23,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.jraf.bbt.util
+@file:JsQualifier("chrome.bookmarks")
 
-import chrome.bookmarks.BookmarkTreeNode
-import chrome.bookmarks.SearchQuery
-import chrome.bookmarks.search
-import kotlinx.coroutines.suspendCancellableCoroutine
+package chrome.bookmarks
 
-suspend fun findFolder(folderName: String): BookmarkTreeNode? {
-    return suspendCancellableCoroutine { cont ->
-        search(SearchQuery()) { bookmarkTreeNodes ->
-            for (bookmarkTreeNode in bookmarkTreeNodes) {
-                if (bookmarkTreeNode.title.toUpperCase() == folderName.toUpperCase() && bookmarkTreeNode.url == null) {
-                    cont.resume(bookmarkTreeNode) {}
-                    return@search
-                }
-            }
-            cont.resume(null) {}
-        }
-    }
+external fun search(searchQuery: SearchQuery, onSearchResults: (Array<BookmarkTreeNode>) -> Unit)
+
+external interface SearchQuery
+
+external interface BookmarkTreeNode {
+    var id: String
+    var title: String
+    var url: String?
 }

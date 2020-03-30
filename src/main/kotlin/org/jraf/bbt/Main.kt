@@ -30,7 +30,7 @@ import chrome.browserAction.BadgeBackgroundColor
 import chrome.browserAction.BadgeText
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-//import org.jraf.bbt.util.findFolder
+import org.jraf.bbt.util.findFolder
 import org.jraf.bbt.util.log
 import org.jraf.bbt.util.retrieveSettingsFromStorage
 
@@ -100,11 +100,11 @@ private suspend fun syncFolders() {
 
 private suspend fun syncFolder(folderName: String, remoteBookmarksUrl: String): Boolean {
     log("Syncing '$folderName' to $remoteBookmarksUrl")
-//    val folder = findFolder(folderName)
-//    if (folder == null) {
-//        log("Could not find folder '$folderName'")
-//        return false
-//    }
+    val folder = findFolder(folderName)
+    if (folder == null) {
+        log("Could not find folder '$folderName'")
+        return false
+    }
 //    val bookmarks = fetchRemoteBookmarks(remoteBookmarksUrl)
 //    if (bookmarks == null) {
 //        log("Could not fetch remote bookmarks from $remoteBookmarksUrl for folder '$folderName'")
