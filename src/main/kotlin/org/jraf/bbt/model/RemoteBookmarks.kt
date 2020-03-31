@@ -30,10 +30,10 @@ interface BookmarksDocument {
     val bookmarks: Array<BookmarkItem>
 
     companion object {
-        const val FORMAT_VERSION = 1
+        private const val FORMAT_VERSION = 1
 
-        const val FIELD_VERSION = "version"
-        const val FIELD_BOOKMARKS = "bookmarks"
+        private const val FIELD_VERSION = "version"
+        private const val FIELD_BOOKMARKS = "bookmarks"
 
         fun isValid(json: dynamic) =
             json[FIELD_VERSION] == FORMAT_VERSION
@@ -43,12 +43,9 @@ interface BookmarksDocument {
 
 interface BookmarkItem {
     val title: String
+    val url: String?
+    val bookmarks: Array<BookmarkItem>?
 }
 
-interface Bookmark : BookmarkItem {
-    val url: String
-}
-
-interface Folder : BookmarkItem {
-    val bookmarks: Array<BookmarkItem>
-}
+fun BookmarkItem.isFolder() = bookmarks != null
+fun BookmarkItem.isBookmark() = url != null

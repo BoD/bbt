@@ -27,16 +27,24 @@
 
 package chrome.bookmarks
 
-external fun search(searchQuery: SearchQuery, onSearchResults: (Array<BookmarkTreeNode>) -> Unit)
-
-external interface SearchQuery
-
-external fun getChildren(bookmarkId: String, onResults: (Array<BookmarkTreeNode>) -> Unit)
-
-external fun removeTree(bookmarkId: String, onRemoved: () -> Unit)
-
 external interface BookmarkTreeNode {
     var id: String
     var title: String
     var url: String?
 }
+
+external interface SearchQuery
+
+external fun search(searchQuery: SearchQuery, onSearchResults: (Array<BookmarkTreeNode>) -> Unit)
+
+external fun getChildren(bookmarkId: String, onResults: (Array<BookmarkTreeNode>) -> Unit)
+
+external fun removeTree(bookmarkId: String, onRemoved: () -> Unit)
+
+external interface CreateParameters {
+    var parentId: String
+    var title: String
+    var url: String?
+}
+
+external fun create(createParameters: CreateParameters, onCreated: (BookmarkTreeNode) -> Unit)

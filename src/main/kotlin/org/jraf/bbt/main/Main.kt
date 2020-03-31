@@ -33,8 +33,10 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.jraf.bbt.model.BookmarkItem
 import org.jraf.bbt.model.BookmarksDocument
+import org.jraf.bbt.model.isBookmark
 import org.jraf.bbt.settings.retrieveSettingsFromStorage
 import org.jraf.bbt.util.FetchException
+import org.jraf.bbt.util.createBookmark
 import org.jraf.bbt.util.emptyFolder
 import org.jraf.bbt.util.fetchJson
 import org.jraf.bbt.util.findFolder
@@ -144,5 +146,13 @@ private suspend fun fetchRemoteBookmarks(remoteBookmarksUrl: String): BookmarksD
 }
 
 private suspend fun populateFolder(folder: BookmarkTreeNode, bookmarkItems: Array<BookmarkItem>) {
-    TODO("Not yet implemented")
+    for (bookmarkItem in bookmarkItems) {
+        if (bookmarkItem.isBookmark()) {
+            createBookmark(parentId = folder.id, title = bookmarkItem.title, url = bookmarkItem.url)
+        } else {
+            val createdFolder = createBookmark(parentId = folder.id, title = bookmarkItem.title)
+            // Recurse
+            populateFolder(createdFolder, bookmarkItem.bookmarks!!)
+        }
+    }
 }

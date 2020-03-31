@@ -26,6 +26,7 @@
 package org.jraf.bbt.util
 
 import chrome.bookmarks.BookmarkTreeNode
+import chrome.bookmarks.CreateParameters
 import chrome.bookmarks.SearchQuery
 import kotlinx.coroutines.suspendCancellableCoroutine
 
@@ -52,7 +53,7 @@ suspend fun getFolderChildren(folderId: String): Array<BookmarkTreeNode> {
 }
 
 suspend fun removeBookmarkTree(folderId: String) {
-    return suspendCancellableCoroutine { cont ->
+    suspendCancellableCoroutine<Unit> { cont ->
         chrome.bookmarks.removeTree(folderId) {
             cont.resume(Unit) {}
         }
@@ -64,5 +65,19 @@ suspend fun emptyFolder(folder: BookmarkTreeNode) {
     val children = getFolderChildren(folder.id)
     for (child in children) {
         removeBookmarkTree(child.id)
+    }
+}
+
+suspend fun createBookmark(parentId: String, title: String, url: String? = null): BookmarkTreeNode {
+    return suspendCancellableCoroutine { cont ->
+        chrome.bookmarks.create(
+            CreateParameters(
+                parentId = parentId,
+                title = title,
+                url = url
+            )
+        ) {
+            cont.resume(it) {}
+        }
     }
 }
