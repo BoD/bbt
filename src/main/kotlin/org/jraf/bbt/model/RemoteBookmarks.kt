@@ -23,21 +23,32 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.jraf.bbt.util
+package org.jraf.bbt.model
 
-import kotlin.js.Date
+interface BookmarksDocument {
+    val version: Int
+    val bookmarks: Array<BookmarkItem>
 
-fun logd(format: String, vararg params: Any?) {
-    val date = Date()
-    chrome.extension.getBackgroundPage().console.log("${date.toLocaleDateString()} ${date.toLocaleTimeString()} - $format", *params)
+    companion object {
+        const val FORMAT_VERSION = 1
+
+        const val FIELD_VERSION = "version"
+        const val FIELD_BOOKMARKS = "bookmarks"
+
+        fun isValid(json: dynamic) =
+            json[FIELD_VERSION] == FORMAT_VERSION
+                    && json[FIELD_BOOKMARKS] is Array<BookmarkItem>
+    }
 }
 
-fun logi(format: String, vararg params: Any?) {
-    val date = Date()
-    chrome.extension.getBackgroundPage().console.info("${date.toLocaleDateString()} ${date.toLocaleTimeString()} - $format", *params)
+interface BookmarkItem {
+    val title: String
 }
 
-fun logw(format: String, vararg params: Any?) {
-    val date = Date()
-    chrome.extension.getBackgroundPage().console.warn("${date.toLocaleDateString()} ${date.toLocaleTimeString()} - $format", *params)
+interface Bookmark : BookmarkItem {
+    val url: String
+}
+
+interface Folder : BookmarkItem {
+    val bookmarks: Array<BookmarkItem>
 }

@@ -31,6 +31,10 @@ external fun search(searchQuery: SearchQuery, onSearchResults: (Array<BookmarkTr
 
 external interface SearchQuery
 
+external fun getChildren(bookmarkId: String, onResults: (Array<BookmarkTreeNode>) -> Unit)
+
+external fun removeTree(bookmarkId: String, onRemoved: () -> Unit)
+
 external interface BookmarkTreeNode {
     var id: String
     var title: String
