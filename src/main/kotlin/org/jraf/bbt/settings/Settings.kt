@@ -23,21 +23,37 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.jraf.bbt.util
+package org.jraf.bbt.settings
 
-import kotlin.js.Date
+import kotlinx.coroutines.suspendCancellableCoroutine
 
-fun logd(format: String, vararg params: Any?) {
-    val date = Date()
-    chrome.extension.getBackgroundPage().console.log("${date.toLocaleDateString()} ${date.toLocaleTimeString()} - $format", *params)
-}
+class Settings(
+    val syncEnabled: Boolean,
+    val syncItems: Array<SyncItem>
+)
 
-fun logi(format: String, vararg params: Any?) {
-    val date = Date()
-    chrome.extension.getBackgroundPage().console.info("${date.toLocaleDateString()} ${date.toLocaleTimeString()} - $format", *params)
-}
+data class SyncItem(
+    val folderName: String,
+    val remoteBookmarksUrl: String
+)
 
-fun logw(format: String, vararg params: Any?) {
-    val date = Date()
-    chrome.extension.getBackgroundPage().console.warn("${date.toLocaleDateString()} ${date.toLocaleTimeString()} - $format", *params)
+
+suspend fun retrieveSettingsFromStorage(): Settings {
+    return suspendCancellableCoroutine { cont ->
+        chrome.storage.sync.get("settings") { items ->
+            val obj = items.settings
+            val res = if (obj == undefined) {
+                Settings(
+                    syncEnabled = true,
+                    syncItems = arrayOf(SyncItem("Sample", "https://jrafa.org/static/tmp/bbt/bookmarks.json"))
+                )
+            } else {
+                Settings(
+                    syncEnabled = obj.syncEnabled as Boolean,
+                    syncItems = obj.syncItems as Array<SyncItem>
+                )
+            }
+            cont.resume(res) {}
+        }
+    }
 }

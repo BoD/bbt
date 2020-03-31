@@ -25,35 +25,30 @@
 
 package org.jraf.bbt.util
 
-import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.await
+import org.w3c.fetch.NO_CACHE
+import org.w3c.fetch.RequestCache
+import org.w3c.fetch.RequestInit
+import kotlin.browser.window
 
-class Settings(
-    val syncEnabled: Boolean,
-    val syncItems: Array<SyncItem>
-)
-
-data class SyncItem(
-    val folderName: String,
-    val remoteBookmarksUrl: String
-)
-
-
-suspend fun retrieveSettingsFromStorage(): Settings {
-    return suspendCancellableCoroutine { cont ->
-        chrome.storage.sync.get("settings") { items ->
-            val obj = items.settings
-            val res = if (obj == undefined) {
-                Settings(
-                    syncEnabled = true,
-                    syncItems = arrayOf(SyncItem("Sample", "https://jraf.org/static/tmp/bbt/bookmarks.json"))
-                )
-            } else {
-                Settings(
-                    syncEnabled = obj.syncEnabled as Boolean,
-                    syncItems = obj.syncItems as Array<SyncItem>
-                )
-            }
-            cont.resume(res) {}
+suspend fun fetchJson(url: String): dynamic {
+    val res = try {
+        window.fetch(url, object : RequestInit {
+            override var cache: RequestCache? = RequestCache.NO_CACHE
+        }).await()
+    } catch (t: Throwable) {
+        throw FetchException("Could not fetch from $url", cause = t)
+    }
+    @Suppress("UNCHECKED_CAST")
+    return if (res.ok) {
+        try {
+            res.json().await()
+        } catch (t: Throwable) {
+            throw FetchException("Could not convert to JSON", res.status, t)
         }
+    } else {
+        throw FetchException(res.statusText, res.status)
     }
 }
+
+class FetchException(message: String, val status: Short? = null, cause: Throwable? = null) : Exception(message, cause)

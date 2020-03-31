@@ -23,25 +23,34 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.jraf.bbt
+package org.jraf.bbt.main
 
 import chrome.alarms.AlarmOptions
+import chrome.bookmarks.BookmarkTreeNode
 import chrome.browserAction.BadgeBackgroundColor
 import chrome.browserAction.BadgeText
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import org.jraf.bbt.model.BookmarkItem
+import org.jraf.bbt.model.BookmarksDocument
+import org.jraf.bbt.settings.retrieveSettingsFromStorage
+import org.jraf.bbt.util.FetchException
+import org.jraf.bbt.util.emptyFolder
+import org.jraf.bbt.util.fetchJson
 import org.jraf.bbt.util.findFolder
-import org.jraf.bbt.util.log
-import org.jraf.bbt.util.retrieveSettingsFromStorage
+import org.jraf.bbt.util.logd
+import org.jraf.bbt.util.logi
+import org.jraf.bbt.util.logw
 
 private const val SYNC_PERIOD_MINUTES = 1
 private const val ALARM_NAME = "BoD's Bookmark Tool"
+private const val VERSION = "v1.1.0"
 
 fun main() {
     chrome.runtime.onInstalled.addListener {
-        log("BoD's Bookmark Tool v1.1.0")
+        logi("BoD's Bookmark Tool $VERSION")
         chrome.alarms.onAlarm.addListener {
-            log("Alarm triggered")
+            logd("Alarm triggered")
             GlobalScope.launch {
                 syncFolders()
             }
@@ -55,12 +64,12 @@ fun main() {
 private suspend fun onSettingsChanged() {
     val settings = retrieveSettingsFromStorage()
     if (settings.syncEnabled) {
-        log("Sync enabled, scheduled every $SYNC_PERIOD_MINUTES minutes")
+        logd("Sync enabled, scheduled every $SYNC_PERIOD_MINUTES minutes")
         updateBadge(true)
         syncFolders()
         startScheduling()
     } else {
-        log("Sync disabled")
+        logd("Sync disabled")
         updateBadge(false)
         stopScheduling()
     }
@@ -84,40 +93,56 @@ private fun stopScheduling() {
 }
 
 private suspend fun syncFolders() {
-    log("Start syncing...")
+    logd("Start syncing...")
     val settings = retrieveSettingsFromStorage()
     for (syncItem in settings.syncItems) {
         val ok = syncFolder(syncItem.folderName, syncItem.remoteBookmarksUrl)
         if (ok) {
-            log("Finished sync of '${syncItem.folderName}' successfully")
+            logd("Finished sync of '${syncItem.folderName}' successfully")
         } else {
-            log("Finished sync of '${syncItem.folderName}' with error")
+            logd("Finished sync of '${syncItem.folderName}' with error")
         }
     }
-    log("Sync finished")
-    log("")
+    logd("Sync finished")
+    logd("")
 }
 
 private suspend fun syncFolder(folderName: String, remoteBookmarksUrl: String): Boolean {
-    log("Syncing '$folderName' to $remoteBookmarksUrl")
+    logd("Syncing '$folderName' to $remoteBookmarksUrl")
     val folder = findFolder(folderName)
     if (folder == null) {
-        log("Could not find folder '$folderName'")
+        logw("Could not find folder '$folderName'")
         return false
     }
-//    val bookmarks = fetchRemoteBookmarks(remoteBookmarksUrl)
-//    if (bookmarks == null) {
-//        log("Could not fetch remote bookmarks from $remoteBookmarksUrl for folder '$folderName'")
-//        return false
-//    }
-//    log("Fetched object: %O", bookmarks)
-//    val bookmarkObject = bookmarks.bookmarks
-//    if (bookmarkObject == null) {
-//        log("Fetched object doesn't seem to be in a compatible `bookmarks` format")
-//        return false
-//    }
-//    emptyFolder(folder)
-//    log("Populating folder ${folder.title}")
-//    populateFolder(folder, bookmarkObject)
+    val bookmarksDocument = fetchRemoteBookmarks(remoteBookmarksUrl)
+    if (bookmarksDocument == null) {
+        logw("Could not fetch remote bookmarks from $remoteBookmarksUrl for folder '$folderName'")
+        return false
+    }
+    val bookmarkItems = bookmarksDocument.bookmarks
+    emptyFolder(folder)
+    logd("Populating folder ${folder.title}")
+    populateFolder(folder, bookmarkItems)
     return true
+}
+
+private suspend fun fetchRemoteBookmarks(remoteBookmarksUrl: String): BookmarksDocument? {
+    logd("Fetching bookmarks from remote $remoteBookmarksUrl")
+    return try {
+        val dynamicObject: dynamic = fetchJson(remoteBookmarksUrl)
+        logd("Fetched object: %O", dynamicObject.unsafeCast<Any?>())
+        if (!BookmarksDocument.isValid(dynamicObject)) {
+            logw("Fetched object doesn't seem to be a valid `bookmarks` format document")
+            null
+        } else {
+            dynamicObject
+        }
+    } catch (e: FetchException) {
+        logw("Could not fetch from remote $remoteBookmarksUrl: %O", e)
+        null
+    }
+}
+
+private suspend fun populateFolder(folder: BookmarkTreeNode, bookmarkItems: Array<BookmarkItem>) {
+    TODO("Not yet implemented")
 }

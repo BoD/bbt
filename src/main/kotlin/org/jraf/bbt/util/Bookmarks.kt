@@ -27,12 +27,11 @@ package org.jraf.bbt.util
 
 import chrome.bookmarks.BookmarkTreeNode
 import chrome.bookmarks.SearchQuery
-import chrome.bookmarks.search
 import kotlinx.coroutines.suspendCancellableCoroutine
 
 suspend fun findFolder(folderName: String): BookmarkTreeNode? {
     return suspendCancellableCoroutine { cont ->
-        search(SearchQuery()) { bookmarkTreeNodes ->
+        chrome.bookmarks.search(SearchQuery()) { bookmarkTreeNodes ->
             for (bookmarkTreeNode in bookmarkTreeNodes) {
                 if (bookmarkTreeNode.title.toUpperCase() == folderName.toUpperCase() && bookmarkTreeNode.url == null) {
                     cont.resume(bookmarkTreeNode) {}
@@ -41,5 +40,29 @@ suspend fun findFolder(folderName: String): BookmarkTreeNode? {
             }
             cont.resume(null) {}
         }
+    }
+}
+
+suspend fun getFolderChildren(folderId: String): Array<BookmarkTreeNode> {
+    return suspendCancellableCoroutine { cont ->
+        chrome.bookmarks.getChildren(folderId) {
+            cont.resume(it) {}
+        }
+    }
+}
+
+suspend fun removeBookmarkTree(folderId: String) {
+    return suspendCancellableCoroutine { cont ->
+        chrome.bookmarks.removeTree(folderId) {
+            cont.resume(Unit) {}
+        }
+    }
+}
+
+suspend fun emptyFolder(folder: BookmarkTreeNode) {
+    logd("Emptying folder ${folder.title}")
+    val children = getFolderChildren(folder.id)
+    for (child in children) {
+        removeBookmarkTree(child.id)
     }
 }
