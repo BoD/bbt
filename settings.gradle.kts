@@ -1,2 +1,2 @@
-rootProject.name = "bbt-kotlin"
+rootProject.name = "bbt"
 

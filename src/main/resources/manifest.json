@@ -17,7 +17,7 @@
     ],
     "background": {
         "scripts": [
-            "bbt-kotlin.js"
+            "bbt.js"
         ],
         "persistent": false
     },

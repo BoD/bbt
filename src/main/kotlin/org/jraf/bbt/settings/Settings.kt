@@ -45,7 +45,7 @@ suspend fun retrieveSettingsFromStorage(): Settings {
             val res = if (obj == undefined) {
                 Settings(
                     syncEnabled = true,
-                    syncItems = arrayOf(SyncItem("Sample", "https://jrafa.org/static/tmp/bbt/bookmarks.json"))
+                    syncItems = arrayOf(SyncItem("Sample", "https://jraf.org/static/tmp/bbt/bookmarks.json"))
                 )
             } else {
                 Settings(
