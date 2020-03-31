@@ -29,3 +29,10 @@ import org.jraf.bbt.util.jsObject
 
 @Suppress("NOTHING_TO_INLINE", "FunctionName")
 inline fun SearchQuery() = jsObject<SearchQuery> {}
+
+@Suppress("NOTHING_TO_INLINE", "FunctionName")
+inline fun CreateParameters(parentId: String, title: String, url: String?) = jsObject<CreateParameters> {
+    this.parentId = parentId
+    this.title = title
+    this.url = url
+}
