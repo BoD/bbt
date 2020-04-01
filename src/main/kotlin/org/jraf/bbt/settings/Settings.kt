@@ -26,10 +26,16 @@
 package org.jraf.bbt.settings
 
 import kotlinx.coroutines.suspendCancellableCoroutine
+import org.jraf.bbt.util.logd
 
-class Settings(
+private class StorageSettings(
     val syncEnabled: Boolean,
     val syncItems: Array<SyncItem>
+)
+
+data class Settings(
+    val syncEnabled: Boolean,
+    val syncItems: List<SyncItem>
 )
 
 data class SyncItem(
@@ -37,23 +43,37 @@ data class SyncItem(
     val remoteBookmarksUrl: String
 )
 
+private fun Settings.toStorageSettings() = StorageSettings(
+    syncEnabled = syncEnabled,
+    syncItems = syncItems.toTypedArray()
+)
 
-suspend fun retrieveSettingsFromStorage(): Settings {
+
+suspend fun loadSettingsFromStorage(): Settings {
     return suspendCancellableCoroutine { cont ->
         chrome.storage.sync.get("settings") { items ->
             val obj = items.settings
             val res = if (obj == undefined) {
                 Settings(
                     syncEnabled = true,
-                    syncItems = arrayOf(SyncItem("Sample", "https://jraf.org/static/tmp/bbt/bookmarks.json"))
+                    syncItems = listOf(SyncItem("Sample", "https://jraf.org/static/tmp/bbt/bookmarks.json"))
                 )
             } else {
                 Settings(
                     syncEnabled = obj.syncEnabled as Boolean,
-                    syncItems = obj.syncItems as Array<SyncItem>
+                    syncItems = (obj.syncItems as Array<SyncItem>).toList()
                 )
             }
             cont.resume(res) {}
         }
+    }
+}
+
+suspend fun saveSettingsToStorage(settings: Settings) {
+    logd("Save settings to storage: %O", settings)
+    suspendCancellableCoroutine<Unit> { cont ->
+        val obj = js("{}")
+        obj.settings = settings.toStorageSettings()
+        chrome.storage.sync.set(obj) { cont.resume(Unit) {} }
     }
 }
