@@ -44,6 +44,8 @@ suspend fun findFolder(folderName: String): BookmarkTreeNode? {
     }
 }
 
+suspend fun isExistingFolder(folderName: String) = findFolder(folderName) != null
+
 suspend fun getFolderChildren(folderId: String): Array<BookmarkTreeNode> {
     return suspendCancellableCoroutine { cont ->
         chrome.bookmarks.getChildren(folderId) {
