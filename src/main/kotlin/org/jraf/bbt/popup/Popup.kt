@@ -174,22 +174,22 @@ private fun onAddItemInputChange(@Suppress("UNUSED_PARAMETER") event: Event) {
         // Folder
         val isExistingFolder = isExistingFolder(folderName)
         val tdFolderNameError = document.getElementById("tdFolderNameError")!!
-        if (folderName.isNotBlank() && !isExistingFolder) {
-            tdFolderNameError.innerHTML = "Bookmark folder doesn't exist"
+        tdFolderNameError.innerHTML = if (folderName.isNotBlank() && !isExistingFolder) {
+            "Bookmark folder doesn't exist"
         } else {
-            tdFolderNameError.innerHTML = ""
+            ""
         }
 
         // Url
         val isValidUrl = isValidUrl(url)
         val tdUrlError = document.getElementById("tdUrlError")!!
-        if (url.isNotBlank() && !isValidUrl) {
-            tdUrlError.innerHTML = "Invalid URL"
+        tdUrlError.innerHTML = if (url.isNotBlank() && !isValidUrl) {
+            "Invalid URL"
         } else {
-            tdUrlError.innerHTML = ""
+            ""
         }
 
-        val areInputsValid = !folderName.isBlank() && isValidUrl
+        val areInputsValid = isExistingFolder && isValidUrl
         btnAdd.disabled = !areInputsValid
     }
 }
