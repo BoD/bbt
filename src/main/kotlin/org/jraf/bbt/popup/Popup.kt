@@ -33,6 +33,8 @@ import org.jraf.bbt.main.onSettingsChanged
 import org.jraf.bbt.settings.SyncItem
 import org.jraf.bbt.settings.loadSettingsFromStorage
 import org.jraf.bbt.settings.saveSettingsToStorage
+import org.jraf.bbt.util.isExistingFolder
+import org.jraf.bbt.util.isValidUrl
 import org.jraf.bbt.util.logd
 import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLInputElement
@@ -79,12 +81,16 @@ private suspend fun populateTable() {
         """.trimIndent()
     }
 
-    // Add item
+    // Add item and validation message
     tableHtml += """
             <tr>
                 <td><input class="input" type="text" placeholder="Folder name" id="inputFolderName"></td>
                 <td><input class="input url" type="text" placeholder="Remote bookmarks URL" id="inputUrl"></td>
-                <td><button type="button" id="btnAdd">Add</button>
+                <td><button type="button" id="btnAdd" disabled>Add</button>
+            </tr>
+            <tr>
+                <td id="tdFolderNameError" class="validationError"></td>
+                <td id="tdUrlError" class="validationError"></td>
             </tr>
     """.trimIndent()
 
@@ -94,12 +100,14 @@ private suspend fun populateTable() {
     document.getElementById("chkSyncEnabled")!!.addEventListener("change", ::onSyncEnabledChange)
     document.getElementById("txtEnabledDisabled")!!.addEventListener("click", ::onSyncEnabledClick)
 
-    // Sync items remove button
+    // Items remove buttons
     for (syncItem in settings.syncItems) {
         document.getElementById("btnRemove_${syncItem.folderName}")!!.addEventListener("click", ::onRemoveClick)
     }
 
-    // Add item button
+    // Add item validation and button
+    document.getElementById("inputFolderName")!!.addEventListener("input", ::onAddItemInputChange)
+    document.getElementById("inputUrl")!!.addEventListener("input", ::onAddItemInputChange)
     document.getElementById("btnAdd")!!.addEventListener("click", ::onAddClick)
 }
 
@@ -156,3 +164,33 @@ private fun onAddClick(@Suppress("UNUSED_PARAMETER") event: Event) {
         onSettingsChanged()
     }
 }
+
+private fun onAddItemInputChange(@Suppress("UNUSED_PARAMETER") event: Event) {
+    val folderName = (document.getElementById("inputFolderName") as HTMLInputElement).value
+    val url = (document.getElementById("inputUrl") as HTMLInputElement).value
+    val btnAdd = document.getElementById("btnAdd") as HTMLButtonElement
+
+    GlobalScope.launch {
+        // Folder
+        val isExistingFolder = isExistingFolder(folderName)
+        val tdFolderNameError = document.getElementById("tdFolderNameError")!!
+        if (folderName.isNotBlank() && !isExistingFolder) {
+            tdFolderNameError.innerHTML = "Bookmark folder doesn't exist"
+        } else {
+            tdFolderNameError.innerHTML = ""
+        }
+
+        // Url
+        val isValidUrl = isValidUrl(url)
+        val tdUrlError = document.getElementById("tdUrlError")!!
+        if (url.isNotBlank() && !isValidUrl) {
+            tdUrlError.innerHTML = "Invalid URL"
+        } else {
+            tdUrlError.innerHTML = ""
+        }
+
+        val areInputsValid = !folderName.isBlank() && isValidUrl
+        btnAdd.disabled = !areInputsValid
+    }
+}
+
