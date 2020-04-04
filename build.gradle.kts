@@ -31,4 +31,12 @@ dependencies {
 
 kotlin.target.browser {}
 
-// Run `./gradlew browserDevelopmentWebpack` or `./gradlew browserProductionWebpack` to build
+tasks.register<Zip>("dist") {
+    dependsOn(":browserProductionWebpack")
+    from(layout.buildDirectory.dir("distributions"))
+    include("*", "*/*")
+    exclude("*.zip")
+    destinationDirectory.set(layout.buildDirectory.dir("distributions"))
+}
+
+// Run `./gradlew browserDevelopmentWebpack` for tests and `./gradlew dist` to release
