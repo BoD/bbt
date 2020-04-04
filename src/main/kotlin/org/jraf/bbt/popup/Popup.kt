@@ -30,6 +30,7 @@ import kotlinx.coroutines.launch
 import org.jraf.bbt.main.EXTENSION_NAME
 import org.jraf.bbt.main.VERSION
 import org.jraf.bbt.main.onSettingsChanged
+import org.jraf.bbt.settings.SyncItem
 import org.jraf.bbt.settings.loadSettingsFromStorage
 import org.jraf.bbt.settings.saveSettingsToStorage
 import org.jraf.bbt.util.logd
@@ -52,12 +53,17 @@ private suspend fun populateTable() {
     val settings = loadSettingsFromStorage()
 
     // Enabled checkbox
-    val syncEnabledHtml = if (settings.syncEnabled) "checked" else ""
+    val syncEnabledCheckboxCheckedHtml = if (settings.syncEnabled) "checked" else ""
+    val syncEnabledLabelHtml = if (settings.syncEnabled) {
+        """<div id="txtEnabledDisabled" class="enabledDisabled"">Enabled</div>"""
+    } else {
+        """<div id="txtEnabledDisabled" class="enabledDisabled disabled"">Disabled</div>"""
+    }
     var tableHtml = """
         <tr>
             <td colspan="3">
-                <input class="checkbox" $syncEnabledHtml type="checkbox" id="chkSyncEnabled" name="chkSyncEnabled">
-                <label for="chkSyncEnabled">Enabled</label>
+                <div class="onoffswitch"><input $syncEnabledCheckboxCheckedHtml type="checkbox" id="chkSyncEnabled" name="chkSyncEnabled" class="onoffswitch-checkbox"><label class="onoffswitch-label" for="chkSyncEnabled"><span class="onoffswitch-inner"></span><span class="onoffswitch-switch"></span></label></div>
+                $syncEnabledLabelHtml
             </td>
         </tr>
     """.trimIndent()
@@ -73,7 +79,7 @@ private suspend fun populateTable() {
         """.trimIndent()
     }
 
-    // Footer
+    // Add item
     tableHtml += """
             <tr>
                 <td><input class="input" type="text" placeholder="Folder name" id="inputFolderName"></td>
@@ -85,30 +91,66 @@ private suspend fun populateTable() {
     document.getElementById("table")!!.innerHTML = tableHtml
 
     // Enabled checkbox
-    document.getElementById("chkSyncEnabled")!!.addEventListener("change", ::onSyncEnabledChanged)
+    document.getElementById("chkSyncEnabled")!!.addEventListener("change", ::onSyncEnabledChange)
+    document.getElementById("txtEnabledDisabled")!!.addEventListener("click", ::onSyncEnabledClick)
 
     // Sync items remove button
     for (syncItem in settings.syncItems) {
-        document.getElementById("btnRemove_${syncItem.folderName}")!!.addEventListener("click", ::onRemoveClicked)
+        document.getElementById("btnRemove_${syncItem.folderName}")!!.addEventListener("click", ::onRemoveClick)
     }
+
+    // Add item button
+    document.getElementById("btnAdd")!!.addEventListener("click", ::onAddClick)
 }
 
-private fun onSyncEnabledChanged(event: Event) {
+private fun updateSyncEnabledText(syncEnabled: Boolean) {
+    val divElement = document.getElementById("txtEnabledDisabled")!!
+    divElement.innerHTML = if (syncEnabled) "Enabled" else "Disabled"
+    if (syncEnabled) divElement.classList.remove("disabled") else divElement.classList.add("disabled")
+}
+
+private fun onSyncEnabledClick(@Suppress("UNUSED_PARAMETER") event: Event) {
+    val chkSyncEnabled = document.getElementById("chkSyncEnabled") as HTMLInputElement
+    val newSyncEnabled = !chkSyncEnabled.checked
+    chkSyncEnabled.checked = newSyncEnabled
+    updateSyncEnabled(newSyncEnabled)
+}
+
+private fun onSyncEnabledChange(event: Event) {
     val syncEnabled = (event.target as HTMLInputElement).checked
+    updateSyncEnabled(syncEnabled)
+}
+
+private fun updateSyncEnabled(syncEnabled: Boolean) = GlobalScope.launch {
+    val settings = loadSettingsFromStorage()
+    saveSettingsToStorage(settings.copy(syncEnabled = syncEnabled))
+
+    updateSyncEnabledText(syncEnabled)
+    onSettingsChanged()
+}
+
+private fun onRemoveClick(event: Event) {
+    val folderName = (event.target as HTMLButtonElement).value
+    logd("onRemoveClick folderName=$folderName")
     GlobalScope.launch {
         val settings = loadSettingsFromStorage()
-        saveSettingsToStorage(settings.copy(syncEnabled = syncEnabled))
+        val settingsToSave = settings.copy(syncItems = settings.syncItems.filterNot { it.folderName == folderName })
+        saveSettingsToStorage(settingsToSave)
 
+        populateTable()
         onSettingsChanged()
     }
 }
 
-private fun onRemoveClicked(event: Event) {
-    val folderName = (event.target as HTMLButtonElement).value
-    logd("onRemoveClicked folderName=$folderName")
+private fun onAddClick(@Suppress("UNUSED_PARAMETER") event: Event) {
+    val folderName = (document.getElementById("inputFolderName") as HTMLInputElement).value
+    val url = (document.getElementById("inputUrl") as HTMLInputElement).value
+    logd("onAddClick folderName=$folderName url=$url")
     GlobalScope.launch {
         val settings = loadSettingsFromStorage()
-        saveSettingsToStorage(settings.copy(syncItems = settings.syncItems.filterNot { it.folderName == folderName }))
+        val syncItemsToSave = settings.syncItems + SyncItem(folderName, url)
+        val settingsToSave = settings.copy(syncItems = syncItemsToSave)
+        saveSettingsToStorage(settingsToSave)
 
         populateTable()
         onSettingsChanged()

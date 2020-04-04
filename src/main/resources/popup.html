@@ -20,15 +20,91 @@
                 width: 64px;
             }
 
-            label {
+
+            /* On-off toggles */
+
+            .onoffswitch {
                 display: inline-block;
+                position: relative;
+                width: 36px;
+                -webkit-user-select: none;
+            }
+            .onoffswitch-checkbox {
+                display: none;
+            }
+            .onoffswitch-label {
+                display: block;
+                overflow: hidden;
+                cursor: pointer;
+                border: 2px solid #FFFFFF;
+                border-radius: 16px;
+            }
+            .onoffswitch-inner {
+                display: block;
+                width: 200%;
+                margin-left: -100%;
+                transition: margin 0.15s ease-in 0s;
+            }
+            .onoffswitch-inner:before, .onoffswitch-inner:after {
+                display: block;
+                float: left;
+                width: 50%;
+                height: 16px;
+                padding: 0;
+                line-height: 16px;
+                font-size: 14px;
+                color: white;
+                font-family: Trebuchet, Arial, sans-serif; font-weight: bold;
+                box-sizing: border-box;
+            }
+            .onoffswitch-inner:before {
+                content: "";
+                padding-left: 10px;
+                background-color: #E0E0E0;
+                color: #DB3737;
+            }
+            .onoffswitch-inner:after {
+                content: "";
+                padding-right: 10px;
+                background-color: #E0E0E0;
+                color: #FFFFFF;
+                text-align: right;
+            }
+            .onoffswitch-switch {
+                display: block;
+                width: 18px;
+                margin: -1px;
+                background: #E0E0E0;
+                position: absolute;
+                top: 0; bottom: 0;
+                right: 16px;
+                border: 2px solid #FFFFFF;
+                border-radius: 16px;
+                transition: all 0.15s ease-in 0s;
+            }
+            .onoffswitch-checkbox:checked + .onoffswitch-label .onoffswitch-inner {
+                margin-left: 0;
+            }
+            .onoffswitch-checkbox:checked + .onoffswitch-label .onoffswitch-switch {
+                right: 0px;
+                background-color: #BB00DD;
             }
 
-            .checkbox {
-                width: 12px;
-                height: 12px;
+
+            /* Enabled / disabled text */
+
+            .enabledDisabled {
+                height: 20px;
+                display: inline-block;
+                position: relative;
+                top: -5.5px;
+                left: 4px;
+                cursor: pointer;
             }
 
+            .disabled {
+                color: #808080;
+            }
         </style>
     </head>
     <body style="width: 480px;" id="bbt">
