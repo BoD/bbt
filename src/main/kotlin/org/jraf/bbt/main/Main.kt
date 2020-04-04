@@ -31,6 +31,7 @@ import chrome.browserAction.BadgeBackgroundColor
 import chrome.browserAction.BadgeText
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import org.jraf.bbt.VERSION
 import org.jraf.bbt.model.BookmarkItem
 import org.jraf.bbt.model.BookmarksDocument
 import org.jraf.bbt.model.isBookmark
@@ -47,7 +48,6 @@ import org.jraf.bbt.util.logi
 import org.jraf.bbt.util.logw
 
 const val EXTENSION_NAME = "BoD's Bookmark Tool"
-const val VERSION = "v1.1.0"
 
 private const val SYNC_PERIOD_MINUTES = 30
 private const val ALARM_NAME = EXTENSION_NAME
