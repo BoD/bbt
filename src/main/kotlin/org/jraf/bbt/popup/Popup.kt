@@ -27,8 +27,8 @@ package org.jraf.bbt.popup
 
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import org.jraf.bbt.VERSION
 import org.jraf.bbt.main.EXTENSION_NAME
-import org.jraf.bbt.main.VERSION
 import org.jraf.bbt.main.onSettingsChanged
 import org.jraf.bbt.settings.SyncItem
 import org.jraf.bbt.settings.loadSettingsFromStorage
