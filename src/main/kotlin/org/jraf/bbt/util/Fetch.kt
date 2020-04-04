@@ -26,16 +26,21 @@
 package org.jraf.bbt.util
 
 import kotlinx.coroutines.await
+import kotlinx.coroutines.withTimeout
 import org.w3c.fetch.NO_CACHE
 import org.w3c.fetch.RequestCache
 import org.w3c.fetch.RequestInit
 import kotlin.browser.window
 
-suspend fun fetchJson(url: String): dynamic {
+private const val DEFAULT_TIMEOUT_MS = 60_000L
+
+suspend fun fetchJson(url: String, timeoutMs: Long = DEFAULT_TIMEOUT_MS): dynamic {
     val res = try {
-        window.fetch(url, object : RequestInit {
-            override var cache: RequestCache? = RequestCache.NO_CACHE
-        }).await()
+        withTimeout(timeoutMs) {
+            window.fetch(url, object : RequestInit {
+                override var cache: RequestCache? = RequestCache.NO_CACHE
+            }).await()
+        }
     } catch (t: Throwable) {
         throw FetchException("Could not fetch from $url", cause = t)
     }

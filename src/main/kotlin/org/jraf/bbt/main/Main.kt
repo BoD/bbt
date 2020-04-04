@@ -49,7 +49,7 @@ import org.jraf.bbt.util.logw
 const val EXTENSION_NAME = "BoD's Bookmark Tool"
 const val VERSION = "v1.1.0"
 
-private const val SYNC_PERIOD_MINUTES = 1
+private const val SYNC_PERIOD_MINUTES = 30
 private const val ALARM_NAME = EXTENSION_NAME
 
 // Note: this is executed when the extension is installed, and
