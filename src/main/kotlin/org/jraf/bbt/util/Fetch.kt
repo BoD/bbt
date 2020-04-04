@@ -32,7 +32,7 @@ import org.w3c.fetch.RequestCache
 import org.w3c.fetch.RequestInit
 import kotlin.browser.window
 
-private const val DEFAULT_TIMEOUT_MS = 60_000L
+private const val DEFAULT_TIMEOUT_MS = 45_000L
 
 suspend fun fetchJson(url: String, timeoutMs: Long = DEFAULT_TIMEOUT_MS): dynamic {
     val res = try {

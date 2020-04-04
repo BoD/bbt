@@ -29,17 +29,18 @@ import chrome.bookmarks.BookmarkTreeNode
 import chrome.bookmarks.CreateParameters
 import chrome.bookmarks.SearchQuery
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
 
 suspend fun findFolder(folderName: String): BookmarkTreeNode? {
     return suspendCancellableCoroutine { cont ->
         chrome.bookmarks.search(SearchQuery()) { bookmarkTreeNodes ->
             for (bookmarkTreeNode in bookmarkTreeNodes) {
                 if (bookmarkTreeNode.title.toUpperCase() == folderName.toUpperCase() && bookmarkTreeNode.url == null) {
-                    cont.resume(bookmarkTreeNode) {}
+                    cont.resume(bookmarkTreeNode)
                     return@search
                 }
             }
-            cont.resume(null) {}
+            cont.resume(null)
         }
     }
 }
@@ -49,7 +50,7 @@ suspend fun isExistingFolder(folderName: String) = findFolder(folderName) != nul
 suspend fun getFolderChildren(folderId: String): Array<BookmarkTreeNode> {
     return suspendCancellableCoroutine { cont ->
         chrome.bookmarks.getChildren(folderId) {
-            cont.resume(it) {}
+            cont.resume(it)
         }
     }
 }
@@ -57,7 +58,7 @@ suspend fun getFolderChildren(folderId: String): Array<BookmarkTreeNode> {
 suspend fun removeBookmarkTree(folderId: String) {
     suspendCancellableCoroutine<Unit> { cont ->
         chrome.bookmarks.removeTree(folderId) {
-            cont.resume(Unit) {}
+            cont.resume(Unit)
         }
     }
 }
@@ -79,7 +80,7 @@ suspend fun createBookmark(parentId: String, title: String, url: String? = null)
                 url = url
             )
         ) {
-            cont.resume(it) {}
+            cont.resume(it)
         }
     }
 }
