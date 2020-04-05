@@ -34,6 +34,7 @@ import kotlinx.coroutines.launch
 import org.jraf.bbt.VERSION
 import org.jraf.bbt.model.BookmarkItem
 import org.jraf.bbt.model.BookmarksDocument
+import org.jraf.bbt.model.SyncState
 import org.jraf.bbt.model.isBookmark
 import org.jraf.bbt.popup.isInPopup
 import org.jraf.bbt.popup.onPopupOpen
@@ -59,8 +60,8 @@ private const val ALARM_NAME = EXTENSION_NAME
 
 private val backgroundPage = chrome.extension.getBackgroundPage()
 
-val syncingPublisher: CachedPublisher<Boolean> by backgroundPage {
-    CachedPublisher<Boolean>()
+val syncStatePublisher: CachedPublisher<SyncState> by backgroundPage {
+    CachedPublisher(SyncState(isSyncing = false, lastSync = null))
 }
 
 // Note: this is executed when the extension is installed, and
@@ -131,7 +132,7 @@ private fun stopScheduling() {
 
 private suspend fun syncFolders() {
     logd("Start syncing...")
-    syncingPublisher.publish(true)
+    syncStatePublisher.publish(SyncState.syncing(syncStatePublisher.value!!))
     val settings = loadSettingsFromStorage()
     for (syncItem in settings.syncItems) {
         val ok = syncFolder(syncItem.folderName, syncItem.remoteBookmarksUrl)
@@ -141,7 +142,7 @@ private suspend fun syncFolders() {
             logd("Finished sync of '${syncItem.folderName}' with error")
         }
     }
-    syncingPublisher.publish(false)
+    syncStatePublisher.publish(SyncState.notSyncing(syncStatePublisher.value!!))
     logd("Sync finished")
     logd("")
 }

@@ -29,7 +29,8 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.jraf.bbt.VERSION
 import org.jraf.bbt.main.EXTENSION_NAME
-import org.jraf.bbt.main.syncingPublisher
+import org.jraf.bbt.main.syncStatePublisher
+import org.jraf.bbt.model.SyncState
 import org.jraf.bbt.settings.SyncItem
 import org.jraf.bbt.settings.loadSettingsFromStorage
 import org.jraf.bbt.settings.saveSettingsToStorage
@@ -86,7 +87,7 @@ private suspend fun populateTable() {
         """.trimIndent()
     }
 
-    // Add item and validation message
+    // Add item section, validation message, and last sync info
     tableHtml += """
             <tr>
                 <td><input class="input" type="text" placeholder="Folder name" id="inputFolderName"></td>
@@ -94,8 +95,11 @@ private suspend fun populateTable() {
                 <td><button type="button" id="btnAdd" disabled>Add</button>
             </tr>
             <tr>
-                <td id="tdFolderNameError" class="validationError"></td>
-                <td id="tdUrlError" class="validationError"></td>
+                <td id="tdFolderNameError" class="validationError">&nbsp;</td>
+                <td id="tdUrlError" class="validationError">&nbsp;</td>
+            </tr>
+            <tr>
+                <td colspan="3" align="right" id="tdLastSync" class="lastSync"></td>
             </tr>
     """.trimIndent()
 
@@ -115,18 +119,25 @@ private suspend fun populateTable() {
     document.getElementById("inputUrl")!!.addEventListener("input", ::onAddItemInputChange)
     document.getElementById("btnAdd")!!.addEventListener("click", ::onAddClick)
 
-    // Observe sync
-    val onSyncChanged: (Boolean) -> Unit = { syncing ->
-        logd("Syncing=$syncing")
+    // Observe sync state
+    val onSyncStateChanged: (SyncState) -> Unit = { syncState ->
+        logd("syncState=$syncState")
         val imgSyncing = document.getElementById("imgSyncing")!!
-        if (syncing) {
+        val tdLastSync = document.getElementById("tdLastSync")!!
+        if (syncState.isSyncing) {
             imgSyncing.removeAttribute("hidden")
+            tdLastSync.innerHTML = "Sync ongoing…"
         } else {
             imgSyncing.setAttribute("hidden", "hidden")
+            tdLastSync.innerHTML = if (syncState.lastSync == null) {
+                ""
+            } else {
+                "Last sync: ${syncState.lastSync.toLocaleDateString()} ${syncState.lastSync.toLocaleTimeString()}"
+            }
         }
     }
-    syncingPublisher.addObserver(onSyncChanged)
-    window.onblur = { syncingPublisher.removeObserver(onSyncChanged) }
+    syncStatePublisher.addObserver(onSyncStateChanged)
+    window.onblur = { syncStatePublisher.removeObserver(onSyncStateChanged) }
 }
 
 private fun updateSyncEnabledText(syncEnabled: Boolean) {
@@ -195,7 +206,7 @@ private fun onAddItemInputChange(@Suppress("UNUSED_PARAMETER") event: Event) {
         tdFolderNameError.innerHTML = if (folderName.isNotBlank() && !isExistingFolder) {
             "Bookmark folder doesn't exist"
         } else {
-            ""
+            "&nbsp;"
         }
 
         // Url
@@ -204,7 +215,7 @@ private fun onAddItemInputChange(@Suppress("UNUSED_PARAMETER") event: Event) {
         tdUrlError.innerHTML = if (url.isNotBlank() && !isValidUrl) {
             "Invalid URL"
         } else {
-            ""
+            "&nbsp;"
         }
 
         val areInputsValid = isExistingFolder && isValidUrl

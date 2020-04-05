@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "org.jraf"
-version = "1.2.0"
+version = "1.2.1"
 
 repositories {
     mavenCentral()
@@ -29,7 +29,7 @@ tasks.register("generateVersionKt") {
             """
                 package org.jraf.bbt
 
-                const val VERSION = "${project.version}"
+                const val VERSION = "v${project.version}"
             """.trimIndent()
         )
     }

@@ -1,3 +1,7 @@
+package org.jraf.bbt.model
+
+import kotlin.js.Date
+
 /*
  * This source is part of the
  *      _____  ___   ____
@@ -23,40 +27,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.jraf.bbt.util
-
-open class Publisher<T> {
-    private val observers = mutableSetOf<(T) -> Unit>()
-
-    open fun addObserver(onChanged: (T) -> Unit) {
-        observers += onChanged
-    }
-
-    fun removeObserver(onChanged: (T) -> Unit) {
-        observers -= onChanged
-    }
-
-    open fun publish(t: T) {
-        dispatch(t)
-    }
-
-    private fun dispatch(t: T) {
-        for (observer in observers) {
-            observer(t)
-        }
-    }
-}
-
-class CachedPublisher<T>(initialValue: T? = null) : Publisher<T>() {
-    var value: T? = initialValue
-
-    override fun publish(t: T) {
-        value = t
-        super.publish(t)
-    }
-
-    override fun addObserver(onChanged: (T) -> Unit) {
-        super.addObserver(onChanged)
-        value?.let { onChanged(it) }
+data class SyncState(
+    val isSyncing: Boolean,
+    val lastSync: Date?
+) {
+    companion object {
+        fun syncing(currentSyncState: SyncState) = currentSyncState.copy(isSyncing = true)
+        fun notSyncing(currentSyncState: SyncState) = currentSyncState.copy(isSyncing = false, lastSync = Date())
     }
 }
