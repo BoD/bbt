@@ -27,10 +27,6 @@
 
 package chrome.extension
 
-import kotlin.js.Console
+import org.w3c.dom.Window
 
-external fun getBackgroundPage(): BackgroundPage
-
-external interface BackgroundPage {
-    val console: Console
-}
+external fun getBackgroundPage(): Window

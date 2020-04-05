@@ -25,22 +25,24 @@
 
 package org.jraf.bbt.util
 
-import kotlin.js.Console
-import kotlin.js.Date
+import org.w3c.dom.Window
+import org.w3c.dom.get
+import kotlin.properties.ReadOnlyProperty
+import kotlin.reflect.KProperty
 
-private fun getConsole() = chrome.extension.getBackgroundPage().asDynamic().console.unsafeCast<Console>()
-
-fun logd(format: String, vararg params: Any?) {
-    val date = Date()
-    getConsole().log("${date.toLocaleDateString()} ${date.toLocaleTimeString()} - $format", *params)
+fun postMessageToBackgroundPage(message: String) {
+    chrome.extension.getBackgroundPage().postMessage(message, "*")
 }
 
-fun logi(format: String, vararg params: Any?) {
-    val date = Date()
-    getConsole().info("${date.toLocaleDateString()} ${date.toLocaleTimeString()} - $format", *params)
-}
-
-fun logw(format: String, vararg params: Any?) {
-    val date = Date()
-    getConsole().warn("${date.toLocaleDateString()} ${date.toLocaleTimeString()} - $format", *params)
+operator fun <T> Window.invoke(init: () -> T): ReadOnlyProperty<Any?, T> {
+    return object : ReadOnlyProperty<Any?, T> {
+        override fun getValue(thisRef: Any?, property: KProperty<*>): T {
+            var res = window[property.name]
+            if (res == undefined) {
+                res = init()
+                window.asDynamic()[property.name] = res
+            }
+            return res.unsafeCast<T>()
+        }
+    }
 }
