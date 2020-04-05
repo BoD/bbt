@@ -38,19 +38,30 @@ import org.jraf.bbt.model.isBookmark
 import org.jraf.bbt.popup.isInPopup
 import org.jraf.bbt.popup.onPopupOpen
 import org.jraf.bbt.settings.loadSettingsFromStorage
+import org.jraf.bbt.util.CachedPublisher
 import org.jraf.bbt.util.FetchException
 import org.jraf.bbt.util.createBookmark
 import org.jraf.bbt.util.emptyFolder
 import org.jraf.bbt.util.fetchJson
 import org.jraf.bbt.util.findFolder
+import org.jraf.bbt.util.invoke
 import org.jraf.bbt.util.logd
 import org.jraf.bbt.util.logi
 import org.jraf.bbt.util.logw
+import org.w3c.dom.MessageEvent
+import org.w3c.dom.events.Event
+import kotlin.browser.window
 
 const val EXTENSION_NAME = "BoD's Bookmark Tool"
 
 private const val SYNC_PERIOD_MINUTES = 30
 private const val ALARM_NAME = EXTENSION_NAME
+
+private val backgroundPage = chrome.extension.getBackgroundPage()
+
+val syncingPublisher: CachedPublisher<Boolean> by backgroundPage {
+    CachedPublisher<Boolean>()
+}
 
 // Note: this is executed when the extension is installed, and
 // also every time popup.html is opened.
@@ -60,6 +71,9 @@ fun main() {
     } else {
         chrome.runtime.onInstalled.addListener {
             logi("$EXTENSION_NAME $VERSION")
+
+            window.addEventListener("message", ::onMessage)
+
             chrome.alarms.onAlarm.addListener {
                 logd("Alarm triggered")
                 GlobalScope.launch {
@@ -73,13 +87,24 @@ fun main() {
     }
 }
 
-suspend fun onSettingsChanged() {
+private fun onMessage(event: Event) {
+    event as MessageEvent
+    logd("onMessage data=${event.data}")
+    GlobalScope.launch {
+        onSettingsChanged()
+    }
+}
+
+private suspend fun onSettingsChanged() {
     val settings = loadSettingsFromStorage()
     if (settings.syncEnabled) {
         logd("Sync enabled, scheduled every $SYNC_PERIOD_MINUTES minutes")
         updateBadge(true)
-        syncFolders()
         startScheduling()
+        // Launch the sync in another coroutine to not make this fun blocking too long
+        GlobalScope.launch {
+            syncFolders()
+        }
     } else {
         logd("Sync disabled")
         updateBadge(false)
@@ -106,6 +131,7 @@ private fun stopScheduling() {
 
 private suspend fun syncFolders() {
     logd("Start syncing...")
+    syncingPublisher.publish(true)
     val settings = loadSettingsFromStorage()
     for (syncItem in settings.syncItems) {
         val ok = syncFolder(syncItem.folderName, syncItem.remoteBookmarksUrl)
@@ -115,6 +141,7 @@ private suspend fun syncFolders() {
             logd("Finished sync of '${syncItem.folderName}' with error")
         }
     }
+    syncingPublisher.publish(false)
     logd("Sync finished")
     logd("")
 }

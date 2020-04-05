@@ -28,11 +28,11 @@ package org.jraf.bbt.util
 import chrome.bookmarks.BookmarkTreeNode
 import chrome.bookmarks.CreateParameters
 import chrome.bookmarks.SearchQuery
-import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 suspend fun findFolder(folderName: String): BookmarkTreeNode? {
-    return suspendCancellableCoroutine { cont ->
+    return suspendCoroutine { cont ->
         chrome.bookmarks.search(SearchQuery()) { bookmarkTreeNodes ->
             for (bookmarkTreeNode in bookmarkTreeNodes) {
                 if (bookmarkTreeNode.title.toUpperCase() == folderName.toUpperCase() && bookmarkTreeNode.url == null) {
@@ -48,7 +48,7 @@ suspend fun findFolder(folderName: String): BookmarkTreeNode? {
 suspend fun isExistingFolder(folderName: String) = findFolder(folderName) != null
 
 suspend fun getFolderChildren(folderId: String): Array<BookmarkTreeNode> {
-    return suspendCancellableCoroutine { cont ->
+    return suspendCoroutine { cont ->
         chrome.bookmarks.getChildren(folderId) {
             cont.resume(it)
         }
@@ -56,7 +56,7 @@ suspend fun getFolderChildren(folderId: String): Array<BookmarkTreeNode> {
 }
 
 suspend fun removeBookmarkTree(folderId: String) {
-    suspendCancellableCoroutine<Unit> { cont ->
+    suspendCoroutine<Unit> { cont ->
         chrome.bookmarks.removeTree(folderId) {
             cont.resume(Unit)
         }
@@ -72,7 +72,7 @@ suspend fun emptyFolder(folder: BookmarkTreeNode) {
 }
 
 suspend fun createBookmark(parentId: String, title: String, url: String? = null): BookmarkTreeNode {
-    return suspendCancellableCoroutine { cont ->
+    return suspendCoroutine { cont ->
         chrome.bookmarks.create(
             CreateParameters(
                 parentId = parentId,

@@ -25,22 +25,38 @@
 
 package org.jraf.bbt.util
 
-import kotlin.js.Console
-import kotlin.js.Date
+open class Publisher<T> {
+    private val observers = mutableSetOf<(T) -> Unit>()
 
-private fun getConsole() = chrome.extension.getBackgroundPage().asDynamic().console.unsafeCast<Console>()
+    open fun addObserver(onChanged: (T) -> Unit) {
+        observers += onChanged
+    }
 
-fun logd(format: String, vararg params: Any?) {
-    val date = Date()
-    getConsole().log("${date.toLocaleDateString()} ${date.toLocaleTimeString()} - $format", *params)
+    fun removeObserver(onChanged: (T) -> Unit) {
+        observers -= onChanged
+    }
+
+    open fun publish(t: T) {
+        dispatch(t)
+    }
+
+    private fun dispatch(t: T) {
+        for (observer in observers) {
+            observer(t)
+        }
+    }
 }
 
-fun logi(format: String, vararg params: Any?) {
-    val date = Date()
-    getConsole().info("${date.toLocaleDateString()} ${date.toLocaleTimeString()} - $format", *params)
-}
+class CachedPublisher<T> : Publisher<T>() {
+    private var value: T? = null
 
-fun logw(format: String, vararg params: Any?) {
-    val date = Date()
-    getConsole().warn("${date.toLocaleDateString()} ${date.toLocaleTimeString()} - $format", *params)
+    override fun publish(t: T) {
+        value = t
+        super.publish(t)
+    }
+
+    override fun addObserver(onChanged: (T) -> Unit) {
+        super.addObserver(onChanged)
+        value?.let { onChanged(it) }
+    }
 }

@@ -29,17 +29,19 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.jraf.bbt.VERSION
 import org.jraf.bbt.main.EXTENSION_NAME
-import org.jraf.bbt.main.onSettingsChanged
+import org.jraf.bbt.main.syncingPublisher
 import org.jraf.bbt.settings.SyncItem
 import org.jraf.bbt.settings.loadSettingsFromStorage
 import org.jraf.bbt.settings.saveSettingsToStorage
 import org.jraf.bbt.util.isExistingFolder
 import org.jraf.bbt.util.isValidUrl
 import org.jraf.bbt.util.logd
+import org.jraf.bbt.util.postMessageToBackgroundPage
 import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.events.Event
 import kotlin.browser.document
+import kotlin.browser.window
 
 fun isInPopup() = document.getElementById("bbt") != null
 
@@ -63,9 +65,12 @@ private suspend fun populateTable() {
     }
     var tableHtml = """
         <tr>
-            <td colspan="3">
+            <td colspan="2">
                 <div class="onoffswitch"><input $syncEnabledCheckboxCheckedHtml type="checkbox" id="chkSyncEnabled" name="chkSyncEnabled" class="onoffswitch-checkbox"><label class="onoffswitch-label" for="chkSyncEnabled"><span class="onoffswitch-inner"></span><span class="onoffswitch-switch"></span></label></div>
                 $syncEnabledLabelHtml
+            </td>
+            <td>
+                <center><img id="imgSyncing" src="icons/loading.gif" width="20" height="20" hidden></center>
             </td>
         </tr>
     """.trimIndent()
@@ -109,6 +114,19 @@ private suspend fun populateTable() {
     document.getElementById("inputFolderName")!!.addEventListener("input", ::onAddItemInputChange)
     document.getElementById("inputUrl")!!.addEventListener("input", ::onAddItemInputChange)
     document.getElementById("btnAdd")!!.addEventListener("click", ::onAddClick)
+
+    // Observe sync
+    val onSyncChanged: (Boolean) -> Unit = { syncing ->
+        logd("Syncing=$syncing")
+        val imgSyncing = document.getElementById("imgSyncing")!!
+        if (syncing) {
+            imgSyncing.removeAttribute("hidden")
+        } else {
+            imgSyncing.setAttribute("hidden", "hidden")
+        }
+    }
+    syncingPublisher.addObserver(onSyncChanged)
+    window.onblur = { syncingPublisher.removeObserver(onSyncChanged) }
 }
 
 private fun updateSyncEnabledText(syncEnabled: Boolean) {
@@ -134,7 +152,7 @@ private fun updateSyncEnabled(syncEnabled: Boolean) = GlobalScope.launch {
     saveSettingsToStorage(settings.copy(syncEnabled = syncEnabled))
 
     updateSyncEnabledText(syncEnabled)
-    onSettingsChanged()
+    postOnSettingsChanged()
 }
 
 private fun onRemoveClick(event: Event) {
@@ -146,7 +164,7 @@ private fun onRemoveClick(event: Event) {
         saveSettingsToStorage(settingsToSave)
 
         populateTable()
-        onSettingsChanged()
+        postOnSettingsChanged()
     }
 }
 
@@ -161,7 +179,7 @@ private fun onAddClick(@Suppress("UNUSED_PARAMETER") event: Event) {
         saveSettingsToStorage(settingsToSave)
 
         populateTable()
-        onSettingsChanged()
+        postOnSettingsChanged()
     }
 }
 
@@ -194,3 +212,4 @@ private fun onAddItemInputChange(@Suppress("UNUSED_PARAMETER") event: Event) {
     }
 }
 
+private fun postOnSettingsChanged() = postMessageToBackgroundPage("onSettingsChanged")
