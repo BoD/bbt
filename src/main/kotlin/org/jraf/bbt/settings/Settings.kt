@@ -25,9 +25,9 @@
 
 package org.jraf.bbt.settings
 
-import kotlinx.coroutines.suspendCancellableCoroutine
 import org.jraf.bbt.util.logd
 import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 private class StorageSettings(
     val syncEnabled: Boolean,
@@ -51,7 +51,7 @@ private fun Settings.toStorageSettings() = StorageSettings(
 
 
 suspend fun loadSettingsFromStorage(): Settings {
-    return suspendCancellableCoroutine { cont ->
+    return suspendCoroutine { cont ->
         chrome.storage.sync.get("settings") { items ->
             val obj = items.settings
             val res = if (obj == undefined) {
@@ -72,7 +72,7 @@ suspend fun loadSettingsFromStorage(): Settings {
 
 suspend fun saveSettingsToStorage(settings: Settings) {
     logd("Save settings to storage: %O", settings)
-    suspendCancellableCoroutine<Unit> { cont ->
+    suspendCoroutine<Unit> { cont ->
         val obj = js("{}")
         obj.settings = settings.toStorageSettings()
         chrome.storage.sync.set(obj) { cont.resume(Unit) }
