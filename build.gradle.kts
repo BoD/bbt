@@ -62,8 +62,8 @@ kotlin {
 }
 
 tasks.register<Zip>("dist") {
-    dependsOn(":browserProductionWebpack")
     dependsOn(":replaceVersionInManifest")
+    dependsOn(":browserProductionWebpack")
     from(layout.buildDirectory.dir("distributions"))
     include("*", "*/*")
     exclude("*.zip")
