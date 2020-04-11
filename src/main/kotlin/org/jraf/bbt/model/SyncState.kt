@@ -1,7 +1,3 @@
-package org.jraf.bbt.model
-
-import kotlin.js.Date
-
 /*
  * This source is part of the
  *      _____  ___   ____
@@ -27,12 +23,47 @@ import kotlin.js.Date
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+package org.jraf.bbt.model
+
+import kotlin.js.Date
+
 data class SyncState(
-    val isSyncing: Boolean,
-    val lastSync: Date?
+    val lastSync: Date?,
+    val folderSyncStates: Map<String, FolderSyncState>
 ) {
+    val isSyncing get() = folderSyncStates.values.any { it is Syncing }
+
+    fun asStartSyncing() = copy(folderSyncStates = mapOf())
+    fun asSyncing(folderName: String) = copy(folderSyncStates = folderSyncStates + (folderName to Syncing))
+    fun asError(folderName: String, cause: Throwable) = copy(folderSyncStates = folderSyncStates + (folderName to Error(cause)))
+    fun asSuccess(folderName: String) = copy(folderSyncStates = folderSyncStates + (folderName to Success))
+    fun asFinishSyncing() = copy(lastSync = Date())
+
     companion object {
-        fun syncing(currentSyncState: SyncState) = currentSyncState.copy(isSyncing = true)
-        fun notSyncing(currentSyncState: SyncState) = currentSyncState.copy(isSyncing = false, lastSync = Date())
+        fun initialState() = SyncState(null, mapOf())
     }
+}
+
+sealed class FolderSyncState {
+    abstract val isSyncing: Boolean
+    abstract val isError: Boolean
+    abstract val isSuccess: Boolean
+}
+
+object Syncing : FolderSyncState() {
+    override val isSyncing = true
+    override val isError = false
+    override val isSuccess = false
+}
+
+data class Error(val cause: Throwable) : FolderSyncState() {
+    override val isSyncing = false
+    override val isError = true
+    override val isSuccess = false
+}
+
+object Success : FolderSyncState() {
+    override val isSyncing = false
+    override val isError = false
+    override val isSuccess = true
 }
