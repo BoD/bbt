@@ -30,6 +30,7 @@ import kotlinx.coroutines.launch
 import org.jraf.bbt.VERSION
 import org.jraf.bbt.main.EXTENSION_NAME
 import org.jraf.bbt.main.syncStatePublisher
+import org.jraf.bbt.model.FolderSyncState
 import org.jraf.bbt.model.SyncState
 import org.jraf.bbt.settings.SyncItem
 import org.jraf.bbt.settings.loadSettingsFromStorage
@@ -39,6 +40,7 @@ import org.jraf.bbt.util.isExistingFolder
 import org.jraf.bbt.util.isValidUrl
 import org.jraf.bbt.util.logd
 import org.jraf.bbt.util.postMessageToBackgroundPage
+import org.jraf.bbt.util.transitiveMessage
 import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLImageElement
 import org.w3c.dom.HTMLInputElement
@@ -226,7 +228,10 @@ private val onSyncStateChanged: (SyncState) -> Unit = { syncState ->
         tdLastSync.innerHTML = if (syncState.lastSync == null) {
             ""
         } else {
-            "Last sync: ${syncState.lastSync.toLocaleDateString()} ${syncState.lastSync.toLocaleTimeString()}"
+            "Last sync: ${syncState.lastSync.toLocaleDateString()} ${syncState.lastSync.toLocaleTimeString(locales = emptyArray(), options = dateLocaleOptions {
+                hour = "2-digit"
+                minute = "2-digit"
+            })}"
         }
     }
 
@@ -237,10 +242,22 @@ private val onSyncStateChanged: (SyncState) -> Unit = { syncState ->
             val imgSyncState = document.getElementById("imgSyncState_$folderName") as HTMLImageElement
             val folderSyncState = syncState.folderSyncStates[folderName]
             when {
-                folderSyncState == null -> imgSyncState.src = "icons/empty.png"
-                folderSyncState.isSyncing -> imgSyncState.src = "icons/loading.gif"
-                folderSyncState.isError -> imgSyncState.src = "icons/warning.png"
-                folderSyncState.isSuccess -> imgSyncState.src = "icons/success.png"
+                folderSyncState == null -> {
+                    imgSyncState.src = "icons/empty.png"
+                    imgSyncState.title = ""
+                }
+                folderSyncState.isSyncing -> {
+                    imgSyncState.src = "icons/loading.gif"
+                    imgSyncState.title = "Sync ongoing…"
+                }
+                folderSyncState.isError -> {
+                    imgSyncState.src = "icons/warning.png"
+                    imgSyncState.title = "Could not sync: ${(folderSyncState.unsafeCast<FolderSyncState.Error>()).cause.transitiveMessage}"
+                }
+                folderSyncState.isSuccess -> {
+                    imgSyncState.src = "icons/success.png"
+                    imgSyncState.title = "Sync successful"
+                }
             }
         }
     }
