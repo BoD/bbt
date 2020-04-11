@@ -34,6 +34,7 @@ import org.jraf.bbt.model.SyncState
 import org.jraf.bbt.settings.SyncItem
 import org.jraf.bbt.settings.loadSettingsFromStorage
 import org.jraf.bbt.settings.saveSettingsToStorage
+import org.jraf.bbt.util.equalsIgnoreCase
 import org.jraf.bbt.util.isExistingFolder
 import org.jraf.bbt.util.isValidUrl
 import org.jraf.bbt.util.logd
@@ -80,8 +81,8 @@ private suspend fun populateTable() {
     for (syncItem in settings.syncItems) {
         tableHtml += """
             <tr>
-                <td><input class="input" type="text" placeholder="Folder name" value="${syncItem.folderName}" readonly="true"></td>
-                <td><input class="input url" type="text" placeholder="Remote bookmarks URL" value="${syncItem.remoteBookmarksUrl}" readonly="true"></td>
+                <td><input class="input folderName" type="text" placeholder="Folder name" value="${syncItem.folderName}" readonly="true"></td>
+                <td class="url"><input class="input url" type="text" placeholder="Remote bookmarks URL" value="${syncItem.remoteBookmarksUrl}" readonly="true"></td>
                 <td><button type="button" id="btnRemove_${syncItem.folderName}" value="${syncItem.folderName}">Remove</button>
             </tr>
         """.trimIndent()
@@ -90,8 +91,8 @@ private suspend fun populateTable() {
     // Add item section, validation message, and last sync info
     tableHtml += """
             <tr>
-                <td><input class="input" type="text" placeholder="Folder name" id="inputFolderName"></td>
-                <td><input class="input url" type="text" placeholder="Remote bookmarks URL" id="inputUrl"></td>
+                <td><input class="input folderName" type="text" placeholder="Folder name" id="inputFolderName"></td>
+                <td class="ur"><input class="input url" type="text" placeholder="Remote bookmarks URL" id="inputUrl"></td>
                 <td><button type="button" id="btnAdd" disabled>Add</button>
             </tr>
             <tr>
@@ -202,25 +203,32 @@ private fun onAddItemInputChange(@Suppress("UNUSED_PARAMETER") event: Event) {
     GlobalScope.launch {
         // Folder
         val isExistingFolder = isExistingFolder(folderName)
+        val isAlreadySyncedFolder = isAlreadySyncedFolder(folderName)
         val tdFolderNameError = document.getElementById("tdFolderNameError")!!
-        tdFolderNameError.innerHTML = if (folderName.isNotBlank() && !isExistingFolder) {
-            "Bookmark folder doesn't exist"
-        } else {
-            "&nbsp;"
+        tdFolderNameError.innerHTML = when {
+            folderName.isBlank() -> "&nbsp;"
+            !isExistingFolder -> "Bookmark folder doesn't exist"
+            isAlreadySyncedFolder -> "Folder is already added"
+            else -> "&nbsp;"
         }
 
         // Url
         val isValidUrl = isValidUrl(url)
         val tdUrlError = document.getElementById("tdUrlError")!!
-        tdUrlError.innerHTML = if (url.isNotBlank() && !isValidUrl) {
-            "Invalid URL"
-        } else {
-            "&nbsp;"
+        tdUrlError.innerHTML = when {
+            url.isBlank() -> "&nbsp;"
+            !isValidUrl -> "Invalid URL"
+            else -> "&nbsp;"
         }
 
-        val areInputsValid = isExistingFolder && isValidUrl
+        val areInputsValid = isExistingFolder && !isAlreadySyncedFolder && isValidUrl
         btnAdd.disabled = !areInputsValid
     }
+}
+
+private suspend fun isAlreadySyncedFolder(folderName: String): Boolean {
+    val settings = loadSettingsFromStorage()
+    return settings.syncItems.any { it.folderName.equalsIgnoreCase(folderName) }
 }
 
 private fun postOnSettingsChanged() = postMessageToBackgroundPage("onSettingsChanged")

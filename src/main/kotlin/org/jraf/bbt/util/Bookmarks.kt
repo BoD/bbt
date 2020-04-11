@@ -35,7 +35,7 @@ suspend fun findFolder(folderName: String): BookmarkTreeNode? {
     return suspendCoroutine { cont ->
         chrome.bookmarks.search(SearchQuery()) { bookmarkTreeNodes ->
             for (bookmarkTreeNode in bookmarkTreeNodes) {
-                if (bookmarkTreeNode.title.toUpperCase() == folderName.toUpperCase() && bookmarkTreeNode.url == null) {
+                if (bookmarkTreeNode.title.equalsIgnoreCase(folderName.toUpperCase()) && bookmarkTreeNode.url == null) {
                     cont.resume(bookmarkTreeNode)
                     return@search
                 }
