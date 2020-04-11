@@ -31,12 +31,12 @@ data class SyncState(
     val lastSync: Date?,
     val folderSyncStates: Map<String, FolderSyncState>
 ) {
-    val isSyncing get() = folderSyncStates.values.any { it is Syncing }
+    val isSyncing get() = folderSyncStates.values.any { it is FolderSyncState.Syncing }
 
     fun asStartSyncing() = copy(folderSyncStates = mapOf())
-    fun asSyncing(folderName: String) = copy(folderSyncStates = folderSyncStates + (folderName to Syncing))
-    fun asError(folderName: String, cause: Throwable) = copy(folderSyncStates = folderSyncStates + (folderName to Error(cause)))
-    fun asSuccess(folderName: String) = copy(folderSyncStates = folderSyncStates + (folderName to Success))
+    fun asSyncing(folderName: String) = copy(folderSyncStates = folderSyncStates + (folderName to FolderSyncState.Syncing))
+    fun asError(folderName: String, cause: Throwable) = copy(folderSyncStates = folderSyncStates + (folderName to FolderSyncState.Error(cause)))
+    fun asSuccess(folderName: String) = copy(folderSyncStates = folderSyncStates + (folderName to FolderSyncState.Success))
     fun asFinishSyncing() = copy(lastSync = Date())
 
     companion object {
@@ -48,22 +48,23 @@ sealed class FolderSyncState {
     abstract val isSyncing: Boolean
     abstract val isError: Boolean
     abstract val isSuccess: Boolean
+
+    object Syncing : FolderSyncState() {
+        override val isSyncing = true
+        override val isError = false
+        override val isSuccess = false
+    }
+
+    data class Error(val cause: Throwable) : FolderSyncState() {
+        override val isSyncing = false
+        override val isError = true
+        override val isSuccess = false
+    }
+
+    object Success : FolderSyncState() {
+        override val isSyncing = false
+        override val isError = false
+        override val isSuccess = true
+    }
 }
 
-object Syncing : FolderSyncState() {
-    override val isSyncing = true
-    override val isError = false
-    override val isSuccess = false
-}
-
-data class Error(val cause: Throwable) : FolderSyncState() {
-    override val isSyncing = false
-    override val isError = true
-    override val isSuccess = false
-}
-
-object Success : FolderSyncState() {
-    override val isSyncing = false
-    override val isError = false
-    override val isSuccess = true
-}

@@ -174,7 +174,7 @@ private suspend fun fetchRemoteBookmarks(remoteBookmarksUrl: String): BookmarksD
             dynamicObject
         }
     } catch (e: FetchException) {
-        throw RuntimeException("Could not fetch from remote $remoteBookmarksUrl: %O", e)
+        throw RuntimeException("Could not fetch from remote $remoteBookmarksUrl", e)
     }
 }
 
