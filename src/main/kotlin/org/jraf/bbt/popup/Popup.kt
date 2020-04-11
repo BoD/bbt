@@ -40,6 +40,7 @@ import org.jraf.bbt.util.isValidUrl
 import org.jraf.bbt.util.logd
 import org.jraf.bbt.util.postMessageToBackgroundPage
 import org.w3c.dom.HTMLButtonElement
+import org.w3c.dom.HTMLImageElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.events.Event
 import kotlin.browser.document
@@ -67,12 +68,9 @@ private suspend fun populateTable() {
     }
     var tableHtml = """
         <tr>
-            <td colspan="2">
+            <td colspan="4">
                 <div class="onoffswitch"><input $syncEnabledCheckboxCheckedHtml type="checkbox" id="chkSyncEnabled" name="chkSyncEnabled" class="onoffswitch-checkbox"><label class="onoffswitch-label" for="chkSyncEnabled"><span class="onoffswitch-inner"></span><span class="onoffswitch-switch"></span></label></div>
                 $syncEnabledLabelHtml
-            </td>
-            <td>
-                <center><img id="imgSyncing" src="icons/loading.gif" width="20" height="20" hidden></center>
             </td>
         </tr>
     """.trimIndent()
@@ -83,6 +81,7 @@ private suspend fun populateTable() {
             <tr>
                 <td><input class="input folderName" type="text" placeholder="Folder name" value="${syncItem.folderName}" readonly="true"></td>
                 <td class="url"><input class="input url" type="text" placeholder="Remote bookmarks URL" value="${syncItem.remoteBookmarksUrl}" readonly="true"></td>
+                <td><img id="imgSyncState_${syncItem.folderName}" src="icons/empty.png" width="20" height="20"></td>
                 <td><button type="button" id="btnRemove_${syncItem.folderName}" value="${syncItem.folderName}">Remove</button>
             </tr>
         """.trimIndent()
@@ -93,6 +92,7 @@ private suspend fun populateTable() {
             <tr>
                 <td><input class="input folderName" type="text" placeholder="Folder name" id="inputFolderName"></td>
                 <td class="ur"><input class="input url" type="text" placeholder="Remote bookmarks URL" id="inputUrl"></td>
+                <td></td>
                 <td><button type="button" id="btnAdd" disabled>Add</button>
             </tr>
             <tr>
@@ -100,7 +100,7 @@ private suspend fun populateTable() {
                 <td id="tdUrlError" class="validationError">&nbsp;</td>
             </tr>
             <tr>
-                <td colspan="3" align="right" id="tdLastSync" class="lastSync"></td>
+                <td colspan="4" align="right" id="tdLastSync" class="lastSync"></td>
             </tr>
     """.trimIndent()
 
@@ -121,22 +121,6 @@ private suspend fun populateTable() {
     document.getElementById("btnAdd")!!.addEventListener("click", ::onAddClick)
 
     // Observe sync state
-    val onSyncStateChanged: (SyncState) -> Unit = { syncState ->
-        logd("syncState=$syncState")
-        val imgSyncing = document.getElementById("imgSyncing")!!
-        val tdLastSync = document.getElementById("tdLastSync")!!
-        if (syncState.isSyncing) {
-            imgSyncing.removeAttribute("hidden")
-            tdLastSync.innerHTML = "Sync ongoing…"
-        } else {
-            imgSyncing.setAttribute("hidden", "hidden")
-            tdLastSync.innerHTML = if (syncState.lastSync == null) {
-                ""
-            } else {
-                "Last sync: ${syncState.lastSync.toLocaleDateString()} ${syncState.lastSync.toLocaleTimeString()}"
-            }
-        }
-    }
     syncStatePublisher.addObserver(onSyncStateChanged)
     window.onblur = { syncStatePublisher.removeObserver(onSyncStateChanged) }
 }
@@ -232,3 +216,32 @@ private suspend fun isAlreadySyncedFolder(folderName: String): Boolean {
 }
 
 private fun postOnSettingsChanged() = postMessageToBackgroundPage("onSettingsChanged")
+
+private val onSyncStateChanged: (SyncState) -> Unit = { syncState ->
+    logd("syncState=$syncState")
+    val tdLastSync = document.getElementById("tdLastSync")!!
+    if (syncState.isSyncing) {
+        tdLastSync.innerHTML = "Sync ongoing…"
+    } else {
+        tdLastSync.innerHTML = if (syncState.lastSync == null) {
+            ""
+        } else {
+            "Last sync: ${syncState.lastSync.toLocaleDateString()} ${syncState.lastSync.toLocaleTimeString()}"
+        }
+    }
+
+    GlobalScope.launch {
+        val settings = loadSettingsFromStorage()
+        for (syncItem in settings.syncItems) {
+            val folderName = syncItem.folderName
+            val imgSyncState = document.getElementById("imgSyncState_$folderName") as HTMLImageElement
+            val folderSyncState = syncState.folderSyncStates[folderName]
+            when {
+                folderSyncState == null -> imgSyncState.src = "icons/empty.png"
+                folderSyncState.isSyncing -> imgSyncState.src = "icons/loading.gif"
+                folderSyncState.isError -> imgSyncState.src = "icons/warning.png"
+                folderSyncState.isSuccess -> imgSyncState.src = "icons/success.png"
+            }
+        }
+    }
+}

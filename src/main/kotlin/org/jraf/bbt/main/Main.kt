@@ -48,7 +48,6 @@ import org.jraf.bbt.util.findFolder
 import org.jraf.bbt.util.invoke
 import org.jraf.bbt.util.logd
 import org.jraf.bbt.util.logi
-import org.jraf.bbt.util.logw
 import org.w3c.dom.MessageEvent
 import org.w3c.dom.events.Event
 import kotlin.browser.window
@@ -61,7 +60,7 @@ private const val ALARM_NAME = EXTENSION_NAME
 private val backgroundPage = chrome.extension.getBackgroundPage()
 
 val syncStatePublisher: CachedPublisher<SyncState> by backgroundPage {
-    CachedPublisher(SyncState(isSyncing = false, lastSync = null))
+    CachedPublisher(SyncState.initialState())
 }
 
 // Note: this is executed when the extension is installed, and
@@ -132,54 +131,50 @@ private fun stopScheduling() {
 
 private suspend fun syncFolders() {
     logd("Start syncing...")
-    syncStatePublisher.publish(SyncState.syncing(syncStatePublisher.value!!))
+    publishSyncState { asStartSyncing() }
     val settings = loadSettingsFromStorage()
     for (syncItem in settings.syncItems) {
-        val ok = syncFolder(syncItem.folderName, syncItem.remoteBookmarksUrl)
-        if (ok) {
+        publishSyncState { asSyncing(folderName = syncItem.folderName) }
+        try {
+            syncFolder(syncItem.folderName, syncItem.remoteBookmarksUrl)
             logd("Finished sync of '${syncItem.folderName}' successfully")
-        } else {
+            publishSyncState { asSuccess(folderName = syncItem.folderName) }
+        } catch (e: Exception) {
             logd("Finished sync of '${syncItem.folderName}' with error")
+            publishSyncState { asError(folderName = syncItem.folderName, cause = e) }
         }
     }
-    syncStatePublisher.publish(SyncState.notSyncing(syncStatePublisher.value!!))
+    publishSyncState { asFinishSyncing() }
     logd("Sync finished")
     logd("")
 }
 
-private suspend fun syncFolder(folderName: String, remoteBookmarksUrl: String): Boolean {
+private suspend fun syncFolder(folderName: String, remoteBookmarksUrl: String) {
     logd("Syncing '$folderName' to $remoteBookmarksUrl")
-    val folder = findFolder(folderName)
-    if (folder == null) {
-        logw("Could not find folder '$folderName'")
-        return false
-    }
-    val bookmarksDocument = fetchRemoteBookmarks(remoteBookmarksUrl)
-    if (bookmarksDocument == null) {
-        logw("Could not fetch remote bookmarks from $remoteBookmarksUrl for folder '$folderName'")
-        return false
+    val folder = findFolder(folderName) ?: throw RuntimeException("Could not find folder '$folderName'")
+    val bookmarksDocument = try {
+        fetchRemoteBookmarks(remoteBookmarksUrl)
+    } catch (e: Exception) {
+        throw RuntimeException("Could not fetch remote bookmarks from $remoteBookmarksUrl for folder '$folderName'", e)
     }
     val bookmarkItems = bookmarksDocument.bookmarks
     emptyFolder(folder)
     logd("Populating folder ${folder.title}")
     populateFolder(folder, bookmarkItems)
-    return true
 }
 
-private suspend fun fetchRemoteBookmarks(remoteBookmarksUrl: String): BookmarksDocument? {
+private suspend fun fetchRemoteBookmarks(remoteBookmarksUrl: String): BookmarksDocument {
     logd("Fetching bookmarks from remote $remoteBookmarksUrl")
     return try {
         val dynamicObject: dynamic = fetchJson(remoteBookmarksUrl)
         logd("Fetched object: %O", dynamicObject.unsafeCast<Any?>())
         if (!BookmarksDocument.isValid(dynamicObject)) {
-            logw("Fetched object doesn't seem to be a valid `bookmarks` format document")
-            null
+            throw RuntimeException("Fetched object doesn't seem to be a valid `bookmarks` format document")
         } else {
             dynamicObject
         }
     } catch (e: FetchException) {
-        logw("Could not fetch from remote $remoteBookmarksUrl: %O", e)
-        null
+        throw RuntimeException("Could not fetch from remote $remoteBookmarksUrl: %O", e)
     }
 }
 
@@ -193,4 +188,8 @@ private suspend fun populateFolder(folder: BookmarkTreeNode, bookmarkItems: Arra
             populateFolder(createdFolder, bookmarkItem.bookmarks!!)
         }
     }
+}
+
+private fun publishSyncState(syncState: SyncState.() -> SyncState) {
+    syncStatePublisher.publish(syncStatePublisher.value!!.syncState())
 }
