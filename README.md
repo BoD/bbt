@@ -6,7 +6,7 @@ Chrome and Firefox allows you to synchronize any bookmark folder with a remote j
 ## Setup
 
 - Chrome: [Chrome Web Store](https://chrome.google.com/webstore/detail/plhhpanklegnkjipjebhdbcfdjdhkpfb).
-- Firefox: [Soon!]().
+- Firefox: [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/bod-s-bookmark-tool/).
 
 ## Remote file format
 
