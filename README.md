@@ -1,10 +1,12 @@
 # BoD's Bookmark Tool
 
-This very small and simple extension allows you to synchronize any bookmark folder with a remote json file.  Ideal to share a bunch of bookmarks with your team at work, or your loved ones!
+This very small and simple extension for
+Chrome and Firefox allows you to synchronize any bookmark folder with a remote json file.  Ideal to share a bunch of bookmarks with your team at work, or your loved ones!
 
 ## Setup
 
-The extension is available at the Chrome Web Store [here](https://chrome.google.com/webstore/detail/plhhpanklegnkjipjebhdbcfdjdhkpfb).
+- Chrome: [Chrome Web Store](https://chrome.google.com/webstore/detail/plhhpanklegnkjipjebhdbcfdjdhkpfb).
+- Firefox: [Soon!]().
 
 ## Remote file format
 

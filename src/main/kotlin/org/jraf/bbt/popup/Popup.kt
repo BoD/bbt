@@ -93,8 +93,8 @@ private suspend fun populateTable() {
     tableHtml += """
             <tr>
                 <td><input class="input folderName" type="text" placeholder="Folder name" id="inputFolderName"></td>
-                <td class="ur"><input class="input url" type="text" placeholder="Remote bookmarks URL" id="inputUrl"></td>
-                <td></td>
+                <td class="url"><input class="input url" type="text" placeholder="Remote bookmarks URL" id="inputUrl"></td>
+                <td><img src="icons/empty.png" width="20" height="20"></td>
                 <td><button type="button" id="btnAdd" disabled>Add</button>
             </tr>
             <tr>
