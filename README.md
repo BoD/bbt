@@ -37,6 +37,13 @@ The remote file is a very simple json file of this form:
 }
 ```
 
+## How to build from source
+
+- This is [Kotlin/JS project](https://kotlinlang.org/docs/reference/js-overview.html)
+- You will need a version of the [JDK](https://en.wikipedia.org/wiki/Java_Development_Kit) on your system
+- After cloning this repository, issue this command: `./gradlew dist`
+- This will compile and package the plugin, and the resulting `bbt-<version>.zip` file will be in the `build/distributions` folder
+
 ## License
 
 Copyright 2020-present Benoit "BoD" Lubek <BoD@JRAF.org>
