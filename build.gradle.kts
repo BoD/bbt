@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "org.jraf"
-version = "1.3.0"
+version = "1.3.1"
 
 repositories {
     mavenCentral()
@@ -37,17 +37,24 @@ tasks.register("generateVersionKt") {
 
 // Replace the version in the manifest with the version defined in gradle
 tasks.register("replaceVersionInManifest") {
+    val manifestFile = layout.projectDirectory.dir("src/main/resources/manifest.json").asFile
+    outputs.file(manifestFile)
     doFirst {
-        val manifestFile = layout.projectDirectory.dir("src/main/resources/manifest.json").asFile
         var contents = manifestFile.readText()
         contents = contents.replace(Regex(""""version": "(.*)""""), """"version": "${project.version}"""")
         manifestFile.writeText(contents)
     }
 }
+// Make browserDevelopmentWebpack and browserProductionWebpack depend on it
+project.afterEvaluate {
+    tasks.getByName("browserDevelopmentWebpack").dependsOn("replaceVersionInManifest")
+    tasks.getByName("browserProductionWebpack").dependsOn("replaceVersionInManifest")
+}
+
 
 tasks.withType<Kotlin2JsCompile>().all {
     kotlinOptions.freeCompilerArgs += "-Xopt-in=kotlinx.coroutines.ExperimentalCoroutinesApi"
-    dependsOn(":generateVersionKt")
+    dependsOn("generateVersionKt")
 }
 
 dependencies {
@@ -62,7 +69,6 @@ kotlin {
 }
 
 tasks.register<Zip>("dist") {
-    dependsOn(":replaceVersionInManifest")
     dependsOn(":browserProductionWebpack")
     from(layout.buildDirectory.dir("distributions"))
     include("*", "*/*")

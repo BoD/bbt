@@ -247,7 +247,7 @@ private val onSyncStateChanged: (SyncState) -> Unit = { syncState ->
                     imgSyncState.title = ""
                 }
                 folderSyncState.isSyncing -> {
-                    imgSyncState.src = "icons/loading.gif"
+                    imgSyncState.src = "icons/syncing.png"
                     imgSyncState.title = "Sync ongoing…"
                 }
                 folderSyncState.isError -> {
