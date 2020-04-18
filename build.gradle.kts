@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.Kotlin2JsCompile
 
 plugins {
-    kotlin("js") version "1.3.71"
+    kotlin("js") version "1.3.72"
     id("com.github.ben-manes.versions") version "0.28.0"
 }
 
