@@ -39,15 +39,7 @@ import org.jraf.bbt.model.isBookmark
 import org.jraf.bbt.popup.isInPopup
 import org.jraf.bbt.popup.onPopupOpen
 import org.jraf.bbt.settings.loadSettingsFromStorage
-import org.jraf.bbt.util.CachedPublisher
-import org.jraf.bbt.util.FetchException
-import org.jraf.bbt.util.createBookmark
-import org.jraf.bbt.util.emptyFolder
-import org.jraf.bbt.util.fetchJson
-import org.jraf.bbt.util.findFolder
-import org.jraf.bbt.util.invoke
-import org.jraf.bbt.util.logd
-import org.jraf.bbt.util.logi
+import org.jraf.bbt.util.*
 import org.w3c.dom.MessageEvent
 import org.w3c.dom.events.Event
 import kotlin.browser.window
@@ -63,26 +55,24 @@ val syncStatePublisher: CachedPublisher<SyncState> by backgroundPage {
     CachedPublisher(SyncState.initialState())
 }
 
-// Note: this is executed when the extension is installed, and
+// Note: this is executed when the extension starts, and
 // also every time popup.html is opened.
 fun main() {
     if (isInPopup()) {
         onPopupOpen()
     } else {
-        chrome.runtime.onInstalled.addListener {
-            logi("$EXTENSION_NAME $VERSION")
+        logi("$EXTENSION_NAME $VERSION")
 
-            window.addEventListener("message", ::onMessage)
+        window.addEventListener("message", ::onMessage)
 
-            chrome.alarms.onAlarm.addListener {
-                logd("Alarm triggered")
-                GlobalScope.launch {
-                    syncFolders()
-                }
-            }
+        chrome.alarms.onAlarm.addListener {
+            logd("Alarm triggered")
             GlobalScope.launch {
-                onSettingsChanged()
+                syncFolders()
             }
+        }
+        GlobalScope.launch {
+            onSettingsChanged()
         }
     }
 }
