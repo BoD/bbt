@@ -1,8 +1,8 @@
 import org.jetbrains.kotlin.gradle.tasks.Kotlin2JsCompile
 
 plugins {
-    kotlin("js") version "1.3.72"
-    id("com.github.ben-manes.versions") version "0.28.0"
+    kotlin("js") version "1.4.32"
+    id("com.github.ben-manes.versions") version "0.38.0"
 }
 
 group = "org.jraf"
@@ -15,7 +15,7 @@ repositories {
 tasks {
     wrapper {
         distributionType = Wrapper.DistributionType.ALL
-        gradleVersion = "6.3"
+        gradleVersion = "7.0"
     }
 }
 
@@ -59,12 +59,16 @@ tasks.withType<Kotlin2JsCompile>().all {
 
 dependencies {
     implementation(kotlin("stdlib-js"))
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-js:1.3.5")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-js:1.4.3")
 
 }
 
 kotlin {
-    target.browser {}
+    js(IR) {
+        browser {
+            binaries.executable()
+        }
+    }
     sourceSets["main"].kotlin.srcDir(tasks.getByName("generateVersionKt").outputs.files)
 }
 
