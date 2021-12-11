@@ -23,8 +23,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+@file:OptIn(DelicateCoroutinesApi::class)
+
 package org.jraf.bbt.popup
 
+import kotlinx.browser.document
+import kotlinx.browser.window
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.jraf.bbt.VERSION
@@ -45,8 +50,6 @@ import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLImageElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.events.Event
-import kotlin.browser.document
-import kotlin.browser.window
 
 fun isInPopup() = document.getElementById("bbt") != null
 
@@ -228,10 +231,12 @@ private val onSyncStateChanged: (SyncState) -> Unit = { syncState ->
         tdLastSync.innerHTML = if (syncState.lastSync == null) {
             ""
         } else {
-            "Last sync: ${syncState.lastSync.toLocaleDateString()} ${syncState.lastSync.toLocaleTimeString(locales = emptyArray(), options = dateLocaleOptions {
-                hour = "2-digit"
-                minute = "2-digit"
-            })}"
+            "Last sync: ${syncState.lastSync.toLocaleDateString()} ${
+                syncState.lastSync.toLocaleTimeString(locales = emptyArray(), options = dateLocaleOptions {
+                    hour = "2-digit"
+                    minute = "2-digit"
+                })
+            }"
         }
     }
 

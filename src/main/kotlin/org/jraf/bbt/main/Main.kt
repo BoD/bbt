@@ -23,14 +23,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+@file:OptIn(DelicateCoroutinesApi::class)
+
 package org.jraf.bbt.main
 
+import kotlinx.browser.window
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import chrome.alarms.AlarmOptions
 import chrome.bookmarks.BookmarkTreeNode
 import chrome.browserAction.BadgeBackgroundColor
 import chrome.browserAction.BadgeText
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 import org.jraf.bbt.VERSION
 import org.jraf.bbt.model.BookmarkItem
 import org.jraf.bbt.model.BookmarksDocument
@@ -39,10 +43,17 @@ import org.jraf.bbt.model.isBookmark
 import org.jraf.bbt.popup.isInPopup
 import org.jraf.bbt.popup.onPopupOpen
 import org.jraf.bbt.settings.loadSettingsFromStorage
-import org.jraf.bbt.util.*
+import org.jraf.bbt.util.CachedPublisher
+import org.jraf.bbt.util.FetchException
+import org.jraf.bbt.util.createBookmark
+import org.jraf.bbt.util.emptyFolder
+import org.jraf.bbt.util.fetchJson
+import org.jraf.bbt.util.findFolder
+import org.jraf.bbt.util.invoke
+import org.jraf.bbt.util.logd
+import org.jraf.bbt.util.logi
 import org.w3c.dom.MessageEvent
 import org.w3c.dom.events.Event
-import kotlin.browser.window
 
 const val EXTENSION_NAME = "BoD's Bookmark Tool"
 
@@ -161,7 +172,7 @@ private suspend fun fetchRemoteBookmarks(remoteBookmarksUrl: String): BookmarksD
         if (!BookmarksDocument.isValid(dynamicObject)) {
             throw RuntimeException("Fetched object doesn't seem to be a valid `bookmarks` format document")
         } else {
-            dynamicObject
+            dynamicObject as BookmarksDocument
         }
     } catch (e: FetchException) {
         throw RuntimeException("Could not fetch from remote $remoteBookmarksUrl", e)

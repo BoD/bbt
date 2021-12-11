@@ -25,4 +25,4 @@
 
 package org.jraf.bbt.util
 
-fun String.equalsIgnoreCase(otherString: String) = toUpperCase() == otherString.toUpperCase()
+fun String.equalsIgnoreCase(otherString: String) = uppercase() == otherString.uppercase()

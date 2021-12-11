@@ -36,8 +36,8 @@ interface BookmarksDocument {
         private const val FIELD_BOOKMARKS = "bookmarks"
 
         fun isValid(json: dynamic) =
-            json[FIELD_VERSION] == FORMAT_VERSION
-                    && json[FIELD_BOOKMARKS] is Array<BookmarkItem>
+            json[FIELD_VERSION] == FORMAT_VERSION &&
+                json[FIELD_BOOKMARKS] is Array<BookmarkItem>
     }
 }
 

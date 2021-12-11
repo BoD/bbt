@@ -25,17 +25,17 @@
 
 package org.jraf.bbt.util
 
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 import chrome.bookmarks.BookmarkTreeNode
 import chrome.bookmarks.CreateParameters
 import chrome.bookmarks.SearchQuery
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 
 suspend fun findFolder(folderName: String): BookmarkTreeNode? {
     return suspendCoroutine { cont ->
         chrome.bookmarks.search(SearchQuery()) { bookmarkTreeNodes ->
             for (bookmarkTreeNode in bookmarkTreeNodes) {
-                if (bookmarkTreeNode.title.equalsIgnoreCase(folderName.toUpperCase()) && bookmarkTreeNode.url == null) {
+                if (bookmarkTreeNode.title.equalsIgnoreCase(folderName.uppercase()) && bookmarkTreeNode.url == null) {
                     cont.resume(bookmarkTreeNode)
                     return@search
                 }

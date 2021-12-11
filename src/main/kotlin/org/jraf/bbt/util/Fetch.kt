@@ -25,12 +25,12 @@
 
 package org.jraf.bbt.util
 
+import kotlinx.browser.window
 import kotlinx.coroutines.await
 import kotlinx.coroutines.withTimeout
 import org.w3c.fetch.NO_CACHE
 import org.w3c.fetch.RequestCache
 import org.w3c.fetch.RequestInit
-import kotlin.browser.window
 
 private const val DEFAULT_TIMEOUT_MS = 45_000L
 

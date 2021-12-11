@@ -25,24 +25,21 @@
 
 package org.jraf.bbt.util
 
+import kotlin.properties.ReadOnlyProperty
 import org.w3c.dom.Window
 import org.w3c.dom.get
-import kotlin.properties.ReadOnlyProperty
-import kotlin.reflect.KProperty
 
 fun postMessageToBackgroundPage(message: String) {
     chrome.extension.getBackgroundPage().postMessage(message, "*")
 }
 
 operator fun <T> Window.invoke(init: () -> T): ReadOnlyProperty<Any?, T> {
-    return object : ReadOnlyProperty<Any?, T> {
-        override fun getValue(thisRef: Any?, property: KProperty<*>): T {
-            var res = window[property.name]
-            if (res == undefined) {
-                res = init()
-                window.asDynamic()[property.name] = res
-            }
-            return res.unsafeCast<T>()
+    return ReadOnlyProperty { _, property ->
+        var res = window[property.name]
+        if (res == undefined) {
+            res = init()
+            window.asDynamic()[property.name] = res
         }
+        res.unsafeCast<T>()
     }
 }

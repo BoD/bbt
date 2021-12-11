@@ -1,12 +1,11 @@
 import org.jetbrains.kotlin.gradle.tasks.Kotlin2JsCompile
 
 plugins {
-    kotlin("js") version "1.4.32"
-    id("com.github.ben-manes.versions") version "0.38.0"
+    kotlin("js")
 }
 
 group = "org.jraf"
-version = "1.3.2"
+version = "1.4.0"
 
 repositories {
     mavenCentral()
@@ -15,7 +14,7 @@ repositories {
 tasks {
     wrapper {
         distributionType = Wrapper.DistributionType.ALL
-        gradleVersion = "7.0"
+        gradleVersion = "7.3.1"
     }
 }
 
@@ -53,14 +52,12 @@ project.afterEvaluate {
 
 
 tasks.withType<Kotlin2JsCompile>().all {
-    kotlinOptions.freeCompilerArgs += "-Xopt-in=kotlinx.coroutines.ExperimentalCoroutinesApi"
+    kotlinOptions.freeCompilerArgs += "-opt-in=kotlin.RequiresOptIn"
     dependsOn("generateVersionKt")
 }
 
 dependencies {
-    implementation(kotlin("stdlib-js"))
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-js:1.4.3")
-
+    implementation(KotlinX.coroutines.coreJs)
 }
 
 kotlin {
@@ -80,4 +77,5 @@ tasks.register<Zip>("dist") {
     destinationDirectory.set(layout.buildDirectory.dir("distributions"))
 }
 
+// Run `./gradlew refreshVersions` to update dependencies
 // Run `./gradlew browserDevelopmentWebpack` for tests and `./gradlew dist` to release
