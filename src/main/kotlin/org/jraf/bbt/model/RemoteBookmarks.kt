@@ -25,27 +25,88 @@
 
 package org.jraf.bbt.model
 
+import org.jraf.bbt.util.logw
+import org.w3c.dom.XMLDocument
+import org.w3c.dom.asList
+import org.w3c.dom.parsing.DOMParser
+
 interface BookmarksDocument {
     val version: Int
     val bookmarks: Array<BookmarkItem>
 
     companion object {
-        private const val FORMAT_VERSION = 1
+        const val FORMAT_VERSION = 1
 
-        private const val FIELD_VERSION = "version"
-        private const val FIELD_BOOKMARKS = "bookmarks"
+        fun parseJson(text: String): BookmarksDocument? {
+            return try {
+                JSON.parse<BookmarksDocument>(text).run {
+                    if (!isValid()) {
+                        logw("Invalid bookmarks document: %O", this)
+                        null
+                    } else {
+                        this
+                    }
+                }
+            } catch (t: Throwable) {
+                logw("Text can't be parsed as JSON BookmarksDocument: ${t.message} %O", t.stackTraceToString())
+                null
+            }
+        }
 
-        fun isValid(json: dynamic) =
-            json[FIELD_VERSION] == FORMAT_VERSION &&
-                json[FIELD_BOOKMARKS] is Array<BookmarkItem>
+        fun parseRssOrAtom(text: String): BookmarksDocument? {
+            return try {
+                val document = DOMParser().parseFromString(text, "text/xml") as XMLDocument
+                // "item" is for RSS / "entry" is for Atom
+                val items = document.getElementsByTagName("item").asList().ifEmpty { document.getElementsByTagName("entry").asList() }
+                BookmarksDocumentImpl(
+                    version = FORMAT_VERSION,
+                    bookmarks = items.map {
+                        // In RSS, the link is in the text inside the <link> tage / in Atom, it's in the href attribute
+                        val linkElement = it.getElementsByTagName("link").item(0)
+                        val link = linkElement?.textContent?.ifBlank { null } ?: linkElement?.getAttribute("href")
+
+                        // Title is the same in RSS / Atom
+                        val title = it.getElementsByTagName("title").item(0)?.textContent?.ifBlank { null } ?: "Untitled"
+                        BookmarkItemImpl(
+                            title = title,
+                            url = link,
+                            bookmarks = null,
+                        )
+                    }
+                        .filterNot { it.url.isNullOrBlank() }
+                        .toTypedArray()
+                )
+            } catch (t: Throwable) {
+                logw("Text can't be parsed as RSS nor Atom: ${t.message} %O", t.stackTraceToString())
+                null
+            }
+        }
     }
 }
+
+data class BookmarksDocumentImpl(
+    override val version: Int,
+
+    @Suppress("ArrayInDataClass")
+    override val bookmarks: Array<BookmarkItem>,
+) : BookmarksDocument
 
 interface BookmarkItem {
     val title: String
     val url: String?
     val bookmarks: Array<BookmarkItem>?
 }
+
+fun BookmarksDocument.isValid(): Boolean {
+    return version == BookmarksDocument.FORMAT_VERSION
+}
+
+data class BookmarkItemImpl(
+    override val title: String,
+    override val url: String?,
+    @Suppress("ArrayInDataClass")
+    override val bookmarks: Array<BookmarkItem>?,
+) : BookmarkItem
 
 fun BookmarkItem.isFolder() = bookmarks != null
 fun BookmarkItem.isBookmark() = url != null

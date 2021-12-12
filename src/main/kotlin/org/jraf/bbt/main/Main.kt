@@ -31,7 +31,7 @@ import kotlinx.browser.window
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import chrome.alarms.AlarmOptions
+import chrome.alarms.AlarmCreateInfo
 import chrome.bookmarks.BookmarkTreeNode
 import chrome.browserAction.BadgeBackgroundColor
 import chrome.browserAction.BadgeText
@@ -47,7 +47,7 @@ import org.jraf.bbt.util.CachedPublisher
 import org.jraf.bbt.util.FetchException
 import org.jraf.bbt.util.createBookmark
 import org.jraf.bbt.util.emptyFolder
-import org.jraf.bbt.util.fetchJson
+import org.jraf.bbt.util.fetchText
 import org.jraf.bbt.util.findFolder
 import org.jraf.bbt.util.invoke
 import org.jraf.bbt.util.logd
@@ -123,7 +123,7 @@ private fun updateBadge(enabled: Boolean) {
 }
 
 private fun startScheduling() {
-    chrome.alarms.create(ALARM_NAME, AlarmOptions(periodInMinutes = SYNC_PERIOD_MINUTES))
+    chrome.alarms.create(ALARM_NAME, AlarmCreateInfo(periodInMinutes = SYNC_PERIOD_MINUTES))
 }
 
 private fun stopScheduling() {
@@ -167,13 +167,16 @@ private suspend fun syncFolder(folderName: String, remoteBookmarksUrl: String) {
 private suspend fun fetchRemoteBookmarks(remoteBookmarksUrl: String): BookmarksDocument {
     logd("Fetching bookmarks from remote $remoteBookmarksUrl")
     return try {
-        val dynamicObject: dynamic = fetchJson(remoteBookmarksUrl)
-        logd("Fetched object: %O", dynamicObject.unsafeCast<Any?>())
-        if (!BookmarksDocument.isValid(dynamicObject)) {
-            throw RuntimeException("Fetched object doesn't seem to be a valid `bookmarks` format document")
-        } else {
-            dynamicObject as BookmarksDocument
-        }
+        val fetchedText = fetchText(remoteBookmarksUrl)
+        BookmarksDocument.parseJson(fetchedText)
+            ?: run {
+                logd("Could not parse fetched text as JSON, trying RSS")
+                BookmarksDocument.parseRssOrAtom(fetchedText)
+            }
+            ?: run {
+                logd("Could not parse fetched text as RSS, give up")
+                throw RuntimeException("Fetched object doesn't seem to be either valid `bookmarks` JSON format document or RSS feed")
+            }
     } catch (e: FetchException) {
         throw RuntimeException("Could not fetch from remote $remoteBookmarksUrl", e)
     }

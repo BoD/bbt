@@ -28,7 +28,7 @@ package org.jraf.bbt.util
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 import chrome.bookmarks.BookmarkTreeNode
-import chrome.bookmarks.CreateParameters
+import chrome.bookmarks.CreateDetails
 import chrome.bookmarks.SearchQuery
 
 suspend fun findFolder(folderName: String): BookmarkTreeNode? {
@@ -74,7 +74,7 @@ suspend fun emptyFolder(folder: BookmarkTreeNode) {
 suspend fun createBookmark(parentId: String, title: String, url: String? = null): BookmarkTreeNode {
     return suspendCoroutine { cont ->
         chrome.bookmarks.create(
-            CreateParameters(
+            CreateDetails(
                 parentId = parentId,
                 title = title,
                 url = url

@@ -84,8 +84,8 @@ private suspend fun populateTable() {
     for (syncItem in settings.syncItems) {
         tableHtml += """
             <tr>
-                <td><input class="input folderName" type="text" placeholder="Folder name" value="${syncItem.folderName}" readonly="true"></td>
-                <td class="url"><input class="input url" type="text" placeholder="Remote bookmarks URL" value="${syncItem.remoteBookmarksUrl}" readonly="true"></td>
+                <td><input class="input folderName" type="text" value="${syncItem.folderName}" readonly="true"></td>
+                <td class="url"><input class="input url" type="text" value="${syncItem.remoteBookmarksUrl}" readonly="true"></td>
                 <td><img id="imgSyncState_${syncItem.folderName}" src="icons/empty.png" width="20" height="20"></td>
                 <td><button type="button" id="btnRemove_${syncItem.folderName}" value="${syncItem.folderName}">Remove</button>
             </tr>
@@ -96,7 +96,7 @@ private suspend fun populateTable() {
     tableHtml += """
             <tr>
                 <td><input class="input folderName" type="text" placeholder="Folder name" id="inputFolderName"></td>
-                <td class="url"><input class="input url" type="text" placeholder="Remote bookmarks URL" id="inputUrl"></td>
+                <td class="url"><input class="input url" type="text" placeholder="Remote bookmarks URL (RSS, Atom, JSON)" id="inputUrl"></td>
                 <td><img src="icons/empty.png" width="20" height="20"></td>
                 <td><button type="button" id="btnAdd" disabled>Add</button>
             </tr>
