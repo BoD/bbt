@@ -23,8 +23,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-@file:OptIn(ExperimentalStdlibApi::class)
-
 package org.jraf.bbt.util
 
 import kotlin.coroutines.resume

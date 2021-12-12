@@ -54,7 +54,6 @@ suspend fun loadSettingsFromStorage(): Settings {
     return suspendCoroutine { cont ->
         chrome.storage.sync.get("settings") { items ->
             val obj = items.settings
-            logd("Settings from storage: %O", obj)
             val res = if (obj == undefined) {
                 Settings(
                     syncEnabled = true,
