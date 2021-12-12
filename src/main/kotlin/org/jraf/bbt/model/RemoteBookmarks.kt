@@ -25,6 +25,11 @@
 
 package org.jraf.bbt.model
 
+import org.jraf.bbt.util.logw
+import org.w3c.dom.XMLDocument
+import org.w3c.dom.asList
+import org.w3c.dom.parsing.DOMParser
+
 interface BookmarksDocument {
     val version: Int
     val bookmarks: Array<BookmarkItem>
@@ -38,6 +43,37 @@ interface BookmarksDocument {
         fun isValid(json: dynamic) =
             json[FIELD_VERSION] == FORMAT_VERSION &&
                 json[FIELD_BOOKMARKS] is Array<BookmarkItem>
+
+        fun parseJson(jsonString: String): BookmarksDocument? {
+            return try {
+                JSON.parse<BookmarksDocument>(jsonString)
+            } catch (e: Exception) {
+                logw("Document can't be parsed as JSON BookmarksDocument")
+                null
+            }
+        }
+
+        fun parseRss(xmlString: String): BookmarksDocument? {
+            return try {
+                val document = DOMParser().parseFromString(xmlString, "text/xml") as XMLDocument
+                val items = document.getElementsByTagName("item").asList()
+                object : BookmarksDocument {
+                    override val version = FORMAT_VERSION
+                    override val bookmarks = items.map {
+                        object : BookmarkItem {
+                            override val title = it.getElementsByTagName("title").item(0)?.textContent ?: "Untitled"
+                            override val url = it.getElementsByTagName("link").item(0)?.textContent
+                            override val bookmarks: Array<BookmarkItem>? = null
+                        }
+                    }
+                        .filterNot { it.url == null }
+                        .toTypedArray<BookmarkItem>()
+                }
+            } catch (e: Exception) {
+                logw("Document can't be parsed as RSS BookmarksDocument")
+                null
+            }
+        }
     }
 }
 

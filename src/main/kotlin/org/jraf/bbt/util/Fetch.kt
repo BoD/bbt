@@ -34,7 +34,7 @@ import org.w3c.fetch.RequestInit
 
 private const val DEFAULT_TIMEOUT_MS = 45_000L
 
-suspend fun fetchJson(url: String, timeoutMs: Long = DEFAULT_TIMEOUT_MS): dynamic {
+suspend fun fetchText(url: String, timeoutMs: Long = DEFAULT_TIMEOUT_MS): String {
     val res = try {
         withTimeout(timeoutMs) {
             window.fetch(url, object : RequestInit {
@@ -44,12 +44,11 @@ suspend fun fetchJson(url: String, timeoutMs: Long = DEFAULT_TIMEOUT_MS): dynami
     } catch (t: Throwable) {
         throw FetchException("Could not fetch from $url", cause = t)
     }
-    @Suppress("UNCHECKED_CAST")
     return if (res.ok) {
         try {
-            res.json().await()
+            res.text().await()
         } catch (t: Throwable) {
-            throw FetchException("Could not convert to JSON", res.status, t)
+            throw FetchException("Could not download text from $url", res.status, t)
         }
     } else {
         throw FetchException(res.statusText, res.status)

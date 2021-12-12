@@ -23,13 +23,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-@file:OptIn(DelicateCoroutinesApi::class)
+//@file:OptIn(DelicateCoroutinesApi::class)
 
 package org.jraf.bbt.popup
 
 import kotlinx.browser.document
 import kotlinx.browser.window
-import kotlinx.coroutines.DelicateCoroutinesApi
+//import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.jraf.bbt.VERSION

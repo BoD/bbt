@@ -23,6 +23,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+@file:OptIn(ExperimentalStdlibApi::class)
+
 package org.jraf.bbt.util
 
 fun String.equalsIgnoreCase(otherString: String) = uppercase() == otherString.uppercase()

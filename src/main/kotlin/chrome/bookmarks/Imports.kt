@@ -41,10 +41,10 @@ external fun getChildren(bookmarkId: String, onResults: (Array<BookmarkTreeNode>
 
 external fun removeTree(bookmarkId: String, onRemoved: () -> Unit)
 
-external interface CreateParameters {
+external interface CreateDetails {
     var parentId: String
     var title: String
     var url: String?
 }
 
-external fun create(createParameters: CreateParameters, onCreated: (BookmarkTreeNode) -> Unit)
+external fun create(createParameters: CreateDetails, callback: (BookmarkTreeNode) -> Unit)

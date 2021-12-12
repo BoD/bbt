@@ -25,9 +25,9 @@
 
 package org.jraf.bbt.settings
 
-import org.jraf.bbt.util.logd
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
+import org.jraf.bbt.util.logd
 
 private class StorageSettings(
     val syncEnabled: Boolean,
@@ -54,6 +54,7 @@ suspend fun loadSettingsFromStorage(): Settings {
     return suspendCoroutine { cont ->
         chrome.storage.sync.get("settings") { items ->
             val obj = items.settings
+            logd("Settings from storage: %O", obj)
             val res = if (obj == undefined) {
                 Settings(
                     syncEnabled = true,

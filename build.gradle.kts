@@ -52,7 +52,7 @@ project.afterEvaluate {
 
 
 tasks.withType<Kotlin2JsCompile>().all {
-    kotlinOptions.freeCompilerArgs += "-opt-in=kotlin.RequiresOptIn"
+//    kotlinOptions.freeCompilerArgs += "-opt-in=kotlin.RequiresOptIn"
     dependsOn("generateVersionKt")
 }
 

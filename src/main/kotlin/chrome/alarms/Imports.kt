@@ -27,9 +27,9 @@
 
 package chrome.alarms
 
-external fun create(alarmName: String, alarmOptions: AlarmOptions)
+external fun create(name: String, alarmInfo: AlarmCreateInfo)
 
-external interface AlarmOptions {
+external interface AlarmCreateInfo {
     var periodInMinutes: Int
 }
 
