@@ -171,7 +171,7 @@ private suspend fun fetchRemoteBookmarks(remoteBookmarksUrl: String): BookmarksD
         BookmarksDocument.parseJson(fetchedText)
             ?: run {
                 logd("Could not parse fetched text as JSON, trying RSS")
-                BookmarksDocument.parseRss(fetchedText)
+                BookmarksDocument.parseRssOrAtom(fetchedText)
             }
             ?: run {
                 logd("Could not parse fetched text as RSS, give up")

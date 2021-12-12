@@ -35,53 +35,78 @@ interface BookmarksDocument {
     val bookmarks: Array<BookmarkItem>
 
     companion object {
-        private const val FORMAT_VERSION = 1
-
-        private const val FIELD_VERSION = "version"
-        private const val FIELD_BOOKMARKS = "bookmarks"
-
-        fun isValid(json: dynamic) =
-            json[FIELD_VERSION] == FORMAT_VERSION &&
-                json[FIELD_BOOKMARKS] is Array<BookmarkItem>
+        const val FORMAT_VERSION = 1
 
         fun parseJson(text: String): BookmarksDocument? {
             return try {
-                JSON.parse<BookmarksDocument>(text)
+                JSON.parse<BookmarksDocument>(text).run {
+                    if (!isValid()) {
+                        logw("Invalid bookmarks document: %O", this)
+                        null
+                    } else {
+                        this
+                    }
+                }
             } catch (t: Throwable) {
-                logw("Text can't be parsed as JSON BookmarksDocument: %O", t.stackTraceToString())
+                logw("Text can't be parsed as JSON BookmarksDocument: ${t.message} %O", t.stackTraceToString())
                 null
             }
         }
 
-        fun parseRss(text: String): BookmarksDocument? {
+        fun parseRssOrAtom(text: String): BookmarksDocument? {
             return try {
                 val document = DOMParser().parseFromString(text, "text/xml") as XMLDocument
-                val items = document.getElementsByTagName("item").asList()
-                object : BookmarksDocument {
-                    override val version = FORMAT_VERSION
-                    override val bookmarks = items.map {
-                        object : BookmarkItem {
-                            override val title = it.getElementsByTagName("title").item(0)?.textContent ?: "Untitled"
-                            override val url = it.getElementsByTagName("link").item(0)?.textContent
-                            override val bookmarks: Array<BookmarkItem>? = null
-                        }
+                // "item" is for RSS / "entry" is for Atom
+                val items = document.getElementsByTagName("item").asList().ifEmpty { document.getElementsByTagName("entry").asList() }
+                BookmarksDocumentImpl(
+                    version = FORMAT_VERSION,
+                    bookmarks = items.map {
+                        // In RSS, the link is in the text inside the <link> tage / in Atom, it's in the href attribute
+                        val linkElement = it.getElementsByTagName("link").item(0)
+                        val link = linkElement?.textContent?.ifBlank { null } ?: linkElement?.getAttribute("href")
+
+                        // Title is the same in RSS / Atom
+                        val title = it.getElementsByTagName("title").item(0)?.textContent?.ifBlank { null } ?: "Untitled"
+                        BookmarkItemImpl(
+                            title = title,
+                            url = link,
+                            bookmarks = null,
+                        )
                     }
-                        .filterNot { it.url == null }
-                        .toTypedArray<BookmarkItem>()
-                }
+                        .filterNot { it.url.isNullOrBlank() }
+                        .toTypedArray()
+                )
             } catch (t: Throwable) {
-                logw("Text can't be parsed as RSS BookmarksDocument: %O", t.stackTraceToString())
+                logw("Text can't be parsed as RSS nor Atom: ${t.message} %O", t.stackTraceToString())
                 null
             }
         }
     }
 }
 
+data class BookmarksDocumentImpl(
+    override val version: Int,
+
+    @Suppress("ArrayInDataClass")
+    override val bookmarks: Array<BookmarkItem>,
+) : BookmarksDocument
+
 interface BookmarkItem {
     val title: String
     val url: String?
     val bookmarks: Array<BookmarkItem>?
 }
+
+fun BookmarksDocument.isValid(): Boolean {
+    return version == BookmarksDocument.FORMAT_VERSION
+}
+
+data class BookmarkItemImpl(
+    override val title: String,
+    override val url: String?,
+    @Suppress("ArrayInDataClass")
+    override val bookmarks: Array<BookmarkItem>?,
+) : BookmarkItem
 
 fun BookmarkItem.isFolder() = bookmarks != null
 fun BookmarkItem.isBookmark() = url != null
