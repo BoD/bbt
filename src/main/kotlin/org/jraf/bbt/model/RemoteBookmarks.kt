@@ -44,18 +44,18 @@ interface BookmarksDocument {
             json[FIELD_VERSION] == FORMAT_VERSION &&
                 json[FIELD_BOOKMARKS] is Array<BookmarkItem>
 
-        fun parseJson(jsonString: String): BookmarksDocument? {
+        fun parseJson(text: String): BookmarksDocument? {
             return try {
-                JSON.parse<BookmarksDocument>(jsonString)
-            } catch (e: Exception) {
-                logw("Document can't be parsed as JSON BookmarksDocument")
+                JSON.parse<BookmarksDocument>(text)
+            } catch (t: Throwable) {
+                logw("Text can't be parsed as JSON BookmarksDocument: %O", t.stackTraceToString())
                 null
             }
         }
 
-        fun parseRss(xmlString: String): BookmarksDocument? {
+        fun parseRss(text: String): BookmarksDocument? {
             return try {
-                val document = DOMParser().parseFromString(xmlString, "text/xml") as XMLDocument
+                val document = DOMParser().parseFromString(text, "text/xml") as XMLDocument
                 val items = document.getElementsByTagName("item").asList()
                 object : BookmarksDocument {
                     override val version = FORMAT_VERSION
@@ -69,8 +69,8 @@ interface BookmarksDocument {
                         .filterNot { it.url == null }
                         .toTypedArray<BookmarkItem>()
                 }
-            } catch (e: Exception) {
-                logw("Document can't be parsed as RSS BookmarksDocument")
+            } catch (t: Throwable) {
+                logw("Text can't be parsed as RSS BookmarksDocument: %O", t.stackTraceToString())
                 null
             }
         }

@@ -167,10 +167,16 @@ private suspend fun syncFolder(folderName: String, remoteBookmarksUrl: String) {
 private suspend fun fetchRemoteBookmarks(remoteBookmarksUrl: String): BookmarksDocument {
     logd("Fetching bookmarks from remote $remoteBookmarksUrl")
     return try {
-        val response = fetchText(remoteBookmarksUrl)
-        BookmarksDocument.parseJson(response)
-            ?: BookmarksDocument.parseRss(response)
-            ?: throw RuntimeException("Fetched object doesn't seem to be either valid `bookmarks` JSON format document or RSS feed")
+        val fetchedText = fetchText(remoteBookmarksUrl)
+        BookmarksDocument.parseJson(fetchedText)
+            ?: run {
+                logd("Could not parse fetched text as JSON, trying RSS")
+                BookmarksDocument.parseRss(fetchedText)
+            }
+            ?: run {
+                logd("Could not parse fetched text as RSS, give up")
+                throw RuntimeException("Fetched object doesn't seem to be either valid `bookmarks` JSON format document or RSS feed")
+            }
     } catch (e: FetchException) {
         throw RuntimeException("Could not fetch from remote $remoteBookmarksUrl", e)
     }

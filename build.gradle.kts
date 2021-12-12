@@ -61,8 +61,9 @@ dependencies {
 }
 
 kotlin {
-//    js(LEGACY) {
-    js(IR) {
+    // XXX Can't use IR for now because of https://youtrack.jetbrains.com/issue/KT-50197
+    // js(IR) {
+    js(LEGACY) {
         browser {
             binaries.executable()
         }
