@@ -11,13 +11,6 @@ repositories {
     mavenCentral()
 }
 
-tasks {
-    wrapper {
-        distributionType = Wrapper.DistributionType.ALL
-        gradleVersion = "7.3.1"
-    }
-}
-
 // Generate a Version.kt file with a constant for the version name
 tasks.register("generateVersionKt") {
     val outputDir = layout.buildDirectory.dir("generated/source/kotlin").get().asFile
@@ -57,13 +50,11 @@ tasks.withType<Kotlin2JsCompile>().all {
 }
 
 dependencies {
-    implementation(KotlinX.coroutines.coreJs)
+    implementation(KotlinX.coroutines.core)
 }
 
 kotlin {
-    // XXX Can't use IR for now because of https://youtrack.jetbrains.com/issue/KT-50197
-    // js(IR) {
-    js(LEGACY) {
+    js(IR) {
         browser {
             binaries.executable()
         }
