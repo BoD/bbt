@@ -27,14 +27,14 @@
 
 package org.jraf.bbt.main
 
-import kotlinx.browser.window
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 import chrome.alarms.AlarmCreateInfo
 import chrome.bookmarks.BookmarkTreeNode
 import chrome.browserAction.BadgeBackgroundColor
 import chrome.browserAction.BadgeText
+import kotlinx.browser.window
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import org.jraf.bbt.VERSION
 import org.jraf.bbt.model.BookmarkItem
 import org.jraf.bbt.model.BookmarksDocument
@@ -174,8 +174,12 @@ private suspend fun fetchRemoteBookmarks(remoteBookmarksUrl: String): BookmarksD
                 BookmarksDocument.parseRssOrAtom(fetchedText)
             }
             ?: run {
+                logd("Could not parse fetched text as RSS, trying HTML")
+                BookmarksDocument.parseHtml(fetchedText)
+            }
+            ?: run {
                 logd("Could not parse fetched text as RSS, give up")
-                throw RuntimeException("Fetched object doesn't seem to be either valid `bookmarks` JSON format document or RSS feed")
+                throw RuntimeException("Fetched object doesn't seem to be either valid `bookmarks` JSON format document, RSS feed, or HTML")
             }
     } catch (e: FetchException) {
         throw RuntimeException("Could not fetch from remote $remoteBookmarksUrl", e)

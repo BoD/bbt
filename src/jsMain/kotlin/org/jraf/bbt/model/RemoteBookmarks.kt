@@ -81,6 +81,28 @@ interface BookmarksDocument {
                 null
             }
         }
+
+        fun parseHtml(text: String): BookmarksDocument? {
+            return try {
+                val document = DOMParser().parseFromString(text, "text/html") as XMLDocument
+                val divs = document.getElementsByTagName("a").asList()
+                BookmarksDocumentImpl(
+                    version = FORMAT_VERSION,
+                    bookmarks = divs.map {
+                        val title = it.textContent?.ifBlank { null } ?: "Untitled"
+                        BookmarkItemImpl(
+                            title = title,
+                            url = null,
+                            bookmarks = parseHtml(it.innerHTML)?.bookmarks,
+                        )
+                    }
+                        .toTypedArray()
+                )
+            } catch (t: Throwable) {
+                logw("Text can't be parsed as HTML: ${t.message} %O", t.stackTraceToString())
+                null
+            }
+        }
     }
 }
 

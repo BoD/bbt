@@ -1,11 +1,9 @@
-import org.jetbrains.kotlin.gradle.tasks.Kotlin2JsCompile
-
 plugins {
-    kotlin("js")
+    kotlin("multiplatform")
 }
 
 group = "org.jraf"
-version = "1.4.0"
+version = "1.5.0"
 
 repositories {
     mavenCentral()
@@ -29,7 +27,7 @@ tasks.register("generateVersionKt") {
 
 // Replace the version in the manifest with the version defined in gradle
 tasks.register("replaceVersionInManifest") {
-    val manifestFile = layout.projectDirectory.dir("src/main/resources/manifest.json").asFile
+    val manifestFile = layout.projectDirectory.dir("src/jsMain/resources/manifest.json").asFile
     outputs.file(manifestFile)
     doFirst {
         var contents = manifestFile.readText()
@@ -37,38 +35,40 @@ tasks.register("replaceVersionInManifest") {
         manifestFile.writeText(contents)
     }
 }
-// Make browserDevelopmentWebpack and browserProductionWebpack depend on it
-project.afterEvaluate {
-    tasks.getByName("browserDevelopmentWebpack").dependsOn("replaceVersionInManifest")
-    tasks.getByName("browserProductionWebpack").dependsOn("replaceVersionInManifest")
-}
+// Make processResources depend on it
+//project.afterEvaluate {
+//    tasks.getByName("processResources").dependsOn("replaceVersionInManifest")
+//}
 
 
-tasks.withType<Kotlin2JsCompile>().all {
-    kotlinOptions.freeCompilerArgs += "-opt-in=kotlin.RequiresOptIn"
-    dependsOn("generateVersionKt")
-}
-
-dependencies {
-    implementation(KotlinX.coroutines.core)
-}
+//tasks.withType<Kotlin2JsCompile>().all {
+//    dependsOn("generateVersionKt")
+//}
 
 kotlin {
-    js(IR) {
+    js {
         browser {
             binaries.executable()
         }
     }
-    sourceSets["main"].kotlin.srcDir(tasks.getByName("generateVersionKt").outputs.files)
+    sourceSets {
+        val commonMain by getting {
+            kotlin.srcDir(tasks.getByName("generateVersionKt").outputs.files)
+            dependencies {
+                implementation(KotlinX.coroutines.core)
+            }
+        }
+    }
 }
 
 tasks.register<Zip>("dist") {
-    dependsOn(":browserProductionWebpack")
-    from(layout.buildDirectory.dir("distributions"))
+    dependsOn("jsBrowserProductionWebpack")
+    from(layout.buildDirectory.dir("js/packages/${project.name}/kotlin"))
     include("*", "*/*")
     exclude("*.zip")
-    destinationDirectory.set(layout.buildDirectory.dir("distributions"))
+    destinationDirectory.set(layout.buildDirectory.dir("js/packages/${project.name}/kotlin"))
 }
 
 // Run `./gradlew refreshVersions` to update dependencies
-// Run `./gradlew browserDevelopmentWebpack` for tests and `./gradlew dist` to release
+// Run `./gradlew jsBrowserDevelopmentWebpack` for tests (result is in build/js/packages/bbt)
+// Run `./gradlew dist` to release (result is in build/js/packages/bbt/kotlin/bbt-x.y.z.zip)

@@ -25,9 +25,9 @@
 
 package org.jraf.bbt.settings
 
+import org.jraf.bbt.util.logd
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
-import org.jraf.bbt.util.logd
 
 private class StorageSettings(
     val syncEnabled: Boolean,

@@ -25,9 +25,9 @@
 
 package org.jraf.bbt.util
 
-import kotlin.properties.ReadOnlyProperty
 import org.w3c.dom.Window
 import org.w3c.dom.get
+import kotlin.properties.ReadOnlyProperty
 
 fun postMessageToBackgroundPage(message: String) {
     chrome.extension.getBackgroundPage().postMessage(message, "*")
