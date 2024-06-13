@@ -30,6 +30,6 @@ package chrome.storage
 external val sync: Sync
 
 external interface Sync {
-    fun get(item: String, onResult: (dynamic) -> Unit)
-    fun set(item: dynamic, onSet: () -> Unit)
+  fun get(item: String, onResult: (dynamic) -> Unit)
+  fun set(item: dynamic, onSet: () -> Unit)
 }

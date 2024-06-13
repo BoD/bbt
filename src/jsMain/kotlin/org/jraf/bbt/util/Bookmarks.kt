@@ -32,55 +32,55 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
 suspend fun findFolder(folderName: String): BookmarkTreeNode? {
-    return suspendCoroutine { cont ->
-        chrome.bookmarks.search(SearchQuery()) { bookmarkTreeNodes ->
-            for (bookmarkTreeNode in bookmarkTreeNodes) {
-                if (bookmarkTreeNode.title.equalsIgnoreCase(folderName.uppercase()) && bookmarkTreeNode.url == null) {
-                    cont.resume(bookmarkTreeNode)
-                    return@search
-                }
-            }
-            cont.resume(null)
+  return suspendCoroutine { cont ->
+    chrome.bookmarks.search(SearchQuery()) { bookmarkTreeNodes ->
+      for (bookmarkTreeNode in bookmarkTreeNodes) {
+        if (bookmarkTreeNode.title.equalsIgnoreCase(folderName.uppercase()) && bookmarkTreeNode.url == null) {
+          cont.resume(bookmarkTreeNode)
+          return@search
         }
+      }
+      cont.resume(null)
     }
+  }
 }
 
 suspend fun isExistingFolder(folderName: String) = findFolder(folderName) != null
 
 suspend fun getFolderChildren(folderId: String): Array<BookmarkTreeNode> {
-    return suspendCoroutine { cont ->
-        chrome.bookmarks.getChildren(folderId) {
-            cont.resume(it)
-        }
+  return suspendCoroutine { cont ->
+    chrome.bookmarks.getChildren(folderId) {
+      cont.resume(it)
     }
+  }
 }
 
 suspend fun removeBookmarkTree(folderId: String) {
-    suspendCoroutine<Unit> { cont ->
-        chrome.bookmarks.removeTree(folderId) {
-            cont.resume(Unit)
-        }
+  suspendCoroutine<Unit> { cont ->
+    chrome.bookmarks.removeTree(folderId) {
+      cont.resume(Unit)
     }
+  }
 }
 
 suspend fun emptyFolder(folder: BookmarkTreeNode) {
-    logd("Emptying folder ${folder.title}")
-    val children = getFolderChildren(folder.id)
-    for (child in children) {
-        removeBookmarkTree(child.id)
-    }
+  logd("Emptying folder ${folder.title}")
+  val children = getFolderChildren(folder.id)
+  for (child in children) {
+    removeBookmarkTree(child.id)
+  }
 }
 
 suspend fun createBookmark(parentId: String, title: String, url: String? = null): BookmarkTreeNode {
-    return suspendCoroutine { cont ->
-        chrome.bookmarks.create(
-            CreateDetails(
-                parentId = parentId,
-                title = title,
-                url = url
-            )
-        ) {
-            cont.resume(it)
-        }
+  return suspendCoroutine { cont ->
+    chrome.bookmarks.create(
+      CreateDetails(
+        parentId = parentId,
+        title = title,
+        url = url
+      )
+    ) {
+      cont.resume(it)
     }
+  }
 }

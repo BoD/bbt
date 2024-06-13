@@ -7,7 +7,7 @@
  *                              /___/
  * repository.
  *
- * Copyright (C) 2020-present Benoit 'BoD' Lubek (BoD@JRAF.org)
+ * Copyright (C) 2024-present Benoit 'BoD' Lubek (BoD@JRAF.org)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,15 +23,32 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.jraf.bbt.util
+package org.w3c.dom.xpath
 
-import org.w3c.dom.url.URL
+import org.w3c.dom.Node
 
-fun isValidUrl(url: String): Boolean {
-  try {
-    URL(url)
-  } catch (t: Throwable) {
-    return false
+external class XPathResult {
+  companion object {
+    val ANY_TYPE: Int
+    val NUMBER_TYPE: Int
+    val ANY_UNORDERED_NODE_TYPE: Int
+    val BOOLEAN_TYPE: Int
+    val FIRST_ORDERED_NODE_TYPE: Int
+    val ORDERED_NODE_ITERATOR_TYPE: Int
+    val ORDERED_NODE_SNAPSHOT_TYPE: Int
+    val STRING_TYPE: Int
+    val UNORDERED_NODE_ITERATOR_TYPE: Int
+    val UNORDERED_NODE_SNAPSHOT_TYPE: Int
   }
-  return true
+
+  val booleanValue: Boolean?
+  val invalidIteratorState: Boolean
+  val numberValue: Double?
+  val resultType: Int
+  val singleNodeValue: dynamic
+  val snapshotLength: Int
+  val stringValue: String?
+
+  fun iterateNext(): Node?
+  fun snapshotItem(index: Int): Node?
 }

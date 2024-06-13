@@ -31,16 +31,16 @@ import kotlin.js.Date
 private fun getConsole() = chrome.extension.getBackgroundPage().asDynamic().console.unsafeCast<Console>()
 
 fun logd(format: String, vararg params: Any?) {
-    val date = Date()
-    getConsole().log("${date.toLocaleDateString()} ${date.toLocaleTimeString()} - $format", *params)
+  val date = Date()
+  getConsole().log("${date.toLocaleDateString()} ${date.toLocaleTimeString()} - $format", *params)
 }
 
 fun logi(format: String, vararg params: Any?) {
-    val date = Date()
-    getConsole().info("${date.toLocaleDateString()} ${date.toLocaleTimeString()} - $format", *params)
+  val date = Date()
+  getConsole().info("${date.toLocaleDateString()} ${date.toLocaleTimeString()} - $format", *params)
 }
 
 fun logw(format: String, vararg params: Any?) {
-    val date = Date()
-    getConsole().warn("${date.toLocaleDateString()} ${date.toLocaleTimeString()} - $format", *params)
+  val date = Date()
+  getConsole().warn("${date.toLocaleDateString()} ${date.toLocaleTimeString()} - $format", *params)
 }

@@ -30,16 +30,16 @@ import org.w3c.dom.get
 import kotlin.properties.ReadOnlyProperty
 
 fun postMessageToBackgroundPage(message: String) {
-    chrome.extension.getBackgroundPage().postMessage(message, "*")
+  chrome.extension.getBackgroundPage().postMessage(message, "*")
 }
 
 operator fun <T> Window.invoke(init: () -> T): ReadOnlyProperty<Any?, T> {
-    return ReadOnlyProperty { _, property ->
-        var res = window[property.name]
-        if (res == undefined) {
-            res = init()
-            window.asDynamic()[property.name] = res
-        }
-        res.unsafeCast<T>()
+  return ReadOnlyProperty { _, property ->
+    var res = window[property.name]
+    if (res == undefined) {
+      res = init()
+      window.asDynamic()[property.name] = res
     }
+    res.unsafeCast<T>()
+  }
 }

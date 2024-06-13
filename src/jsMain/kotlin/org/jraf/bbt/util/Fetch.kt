@@ -35,24 +35,24 @@ import org.w3c.fetch.RequestInit
 private const val DEFAULT_TIMEOUT_MS = 45_000L
 
 suspend fun fetchText(url: String, timeoutMs: Long = DEFAULT_TIMEOUT_MS): String {
-    val res = try {
-        withTimeout(timeoutMs) {
-            window.fetch(url, object : RequestInit {
-                override var cache: RequestCache? = RequestCache.NO_CACHE
-            }).await()
-        }
+  val res = try {
+    withTimeout(timeoutMs) {
+      window.fetch(url, object : RequestInit {
+        override var cache: RequestCache? = RequestCache.NO_CACHE
+      }).await()
+    }
+  } catch (t: Throwable) {
+    throw FetchException("Could not fetch from $url", cause = t)
+  }
+  return if (res.ok) {
+    try {
+      res.text().await()
     } catch (t: Throwable) {
-        throw FetchException("Could not fetch from $url", cause = t)
+      throw FetchException("Could not download text from $url", res.status, t)
     }
-    return if (res.ok) {
-        try {
-            res.text().await()
-        } catch (t: Throwable) {
-            throw FetchException("Could not download text from $url", res.status, t)
-        }
-    } else {
-        throw FetchException(res.statusText, res.status)
-    }
+  } else {
+    throw FetchException(res.statusText, res.status)
+  }
 }
 
 class FetchException(message: String, val status: Short? = null, cause: Throwable? = null) : Exception(message, cause)

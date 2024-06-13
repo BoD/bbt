@@ -26,37 +26,37 @@
 package org.jraf.bbt.util
 
 open class Publisher<T> {
-    private val observers = mutableSetOf<(T) -> Unit>()
+  private val observers = mutableSetOf<(T) -> Unit>()
 
-    open fun addObserver(onChanged: (T) -> Unit) {
-        observers += onChanged
-    }
+  open fun addObserver(onChanged: (T) -> Unit) {
+    observers += onChanged
+  }
 
-    fun removeObserver(onChanged: (T) -> Unit) {
-        observers -= onChanged
-    }
+  fun removeObserver(onChanged: (T) -> Unit) {
+    observers -= onChanged
+  }
 
-    open fun publish(t: T) {
-        dispatch(t)
-    }
+  open fun publish(t: T) {
+    dispatch(t)
+  }
 
-    private fun dispatch(t: T) {
-        for (observer in observers) {
-            observer(t)
-        }
+  private fun dispatch(t: T) {
+    for (observer in observers) {
+      observer(t)
     }
+  }
 }
 
 class CachedPublisher<T>(initialValue: T? = null) : Publisher<T>() {
-    var value: T? = initialValue
+  var value: T? = initialValue
 
-    override fun publish(t: T) {
-        value = t
-        super.publish(t)
-    }
+  override fun publish(t: T) {
+    value = t
+    super.publish(t)
+  }
 
-    override fun addObserver(onChanged: (T) -> Unit) {
-        super.addObserver(onChanged)
-        value?.let { onChanged(it) }
-    }
+  override fun addObserver(onChanged: (T) -> Unit) {
+    super.addObserver(onChanged)
+    value?.let { onChanged(it) }
+  }
 }

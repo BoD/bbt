@@ -7,7 +7,7 @@
  *                              /___/
  * repository.
  *
- * Copyright (C) 2020-present Benoit 'BoD' Lubek (BoD@JRAF.org)
+ * Copyright (C) 2024-present Benoit 'BoD' Lubek (BoD@JRAF.org)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,15 +23,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.jraf.bbt.util
+package org.w3c.dom
 
-import org.w3c.dom.url.URL
+import org.w3c.dom.xpath.XPathResult
 
-fun isValidUrl(url: String): Boolean {
-  try {
-    URL(url)
-  } catch (t: Throwable) {
-    return false
-  }
-  return true
-}
+fun Document.evaluate(
+  xpathExpression: String,
+  contextNode: Node,
+  namespaceResolver: Any?,
+  resultType: Any,
+  result: Any?,
+): XPathResult = asDynamic().evaluate(
+  xpathExpression,
+  contextNode,
+  namespaceResolver,
+  resultType,
+  result
+) as XPathResult

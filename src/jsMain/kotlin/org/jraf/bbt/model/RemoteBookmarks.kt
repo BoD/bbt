@@ -25,110 +25,170 @@
 
 package org.jraf.bbt.model
 
+import org.jraf.bbt.util.logd
 import org.jraf.bbt.util.logw
+import org.jraf.bbt.util.relativeTo
+import org.w3c.dom.Element
+import org.w3c.dom.HTMLAnchorElement
 import org.w3c.dom.XMLDocument
 import org.w3c.dom.asList
+import org.w3c.dom.evaluate
 import org.w3c.dom.parsing.DOMParser
+import org.w3c.dom.xpath.XPathResult
+
+private const val MAX_BOOKMARKS = 100
 
 interface BookmarksDocument {
-    val version: Int
-    val bookmarks: Array<BookmarkItem>
+  val version: Int
+  val bookmarks: Array<BookmarkItem>
 
-    companion object {
-        const val FORMAT_VERSION = 1
+  companion object {
+    const val FORMAT_VERSION = 1
 
-        fun parseJson(text: String): BookmarksDocument? {
-            return try {
-                JSON.parse<BookmarksDocument>(text).run {
-                    if (!isValid()) {
-                        logw("Invalid bookmarks document: %O", this)
-                        null
-                    } else {
-                        this
-                    }
-                }
-            } catch (t: Throwable) {
-                logw("Text can't be parsed as JSON BookmarksDocument: ${t.message} %O", t.stackTraceToString())
-                null
-            }
+    fun parseJson(text: String): BookmarksDocument? {
+      return try {
+        JSON.parse<BookmarksDocument>(text).run {
+          if (!isValid()) {
+            logw("Invalid bookmarks document: %O", this)
+            null
+          } else {
+            this
+          }
         }
-
-        fun parseRssOrAtom(text: String): BookmarksDocument? {
-            return try {
-                val document = DOMParser().parseFromString(text, "text/xml") as XMLDocument
-                // "item" is for RSS / "entry" is for Atom
-                val items = document.getElementsByTagName("item").asList().ifEmpty { document.getElementsByTagName("entry").asList() }
-                BookmarksDocumentImpl(
-                    version = FORMAT_VERSION,
-                    bookmarks = items.map {
-                        // In RSS, the link is in the text inside the <link> tage / in Atom, it's in the href attribute
-                        val linkElement = it.getElementsByTagName("link").item(0)
-                        val link = linkElement?.textContent?.ifBlank { null } ?: linkElement?.getAttribute("href")
-
-                        // Title is the same in RSS / Atom
-                        val title = it.getElementsByTagName("title").item(0)?.textContent?.ifBlank { null } ?: "Untitled"
-                        BookmarkItemImpl(
-                            title = title,
-                            url = link,
-                            bookmarks = null,
-                        )
-                    }
-                        .filterNot { it.url.isNullOrBlank() }
-                        .toTypedArray()
-                )
-            } catch (t: Throwable) {
-                logw("Text can't be parsed as RSS nor Atom: ${t.message} %O", t.stackTraceToString())
-                null
-            }
-        }
-
-        fun parseHtml(text: String): BookmarksDocument? {
-            return try {
-                val document = DOMParser().parseFromString(text, "text/html") as XMLDocument
-                val divs = document.getElementsByTagName("a").asList()
-                BookmarksDocumentImpl(
-                    version = FORMAT_VERSION,
-                    bookmarks = divs.map {
-                        val title = it.textContent?.ifBlank { null } ?: "Untitled"
-                        BookmarkItemImpl(
-                            title = title,
-                            url = null,
-                            bookmarks = parseHtml(it.innerHTML)?.bookmarks,
-                        )
-                    }
-                        .toTypedArray()
-                )
-            } catch (t: Throwable) {
-                logw("Text can't be parsed as HTML: ${t.message} %O", t.stackTraceToString())
-                null
-            }
-        }
+      } catch (t: Throwable) {
+        logw("Text can't be parsed as JSON BookmarksDocument: ${t.message} %O", t.stackTraceToString())
+        null
+      }
     }
+
+    fun parseRssOrAtom(text: String): BookmarksDocument? {
+      return try {
+        val document = DOMParser().parseFromString(text, "text/xml") as XMLDocument
+        val rootElementName = document.documentElement?.tagName
+        if (rootElementName != "rss" && rootElementName != "feed") {
+          logw("Text can't be parsed as RSS nor Atom: root element is not 'rss' nor 'feed'")
+          return null
+        }
+
+        // "item" is for RSS / "entry" is for Atom
+        val items = document.getElementsByTagName("item").asList()
+          .ifEmpty { document.getElementsByTagName("entry").asList() }
+        BookmarksDocumentImpl(
+          version = FORMAT_VERSION,
+          bookmarks = items.map {
+            // In RSS, the link is in the text inside the <link> tage / in Atom, it's in the href attribute
+            val linkElement = it.getElementsByTagName("link").item(0)
+            val link = linkElement?.textContent?.ifBlank { null }
+              ?: linkElement?.getAttribute("href")
+
+            // Title is the same in RSS / Atom
+            val title = it.getElementsByTagName("title").item(0)?.textContent?.ifBlank { null } ?: "Untitled"
+            BookmarkItemImpl(
+              title = title,
+              url = link,
+              bookmarks = null,
+            )
+          }
+            .filterNot { it.url.isNullOrBlank() }
+            .toTypedArray()
+        )
+      } catch (t: Throwable) {
+        logw("Text can't be parsed as RSS nor Atom: ${t.message} %O", t.stackTraceToString())
+        null
+      }
+    }
+
+    fun parseHtml(
+      text: String,
+      elementXPath: String?,
+      documentUrl: String,
+    ): BookmarksDocument? {
+      return try {
+        val document = DOMParser().parseFromString(text, "text/html")
+        val root = if (elementXPath != null) {
+          logd("Using XPath expression: $elementXPath")
+          val element = try {
+            val xPathResult = document.evaluate(elementXPath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null)
+            xPathResult.singleNodeValue as? Element
+          } catch (t: Throwable) {
+            logw("Error evaluating XPath expression '$elementXPath': ${t.message} %O", t.stackTraceToString())
+            return null
+          }
+          if (element == null) {
+            logw("Node at XPath expression '$elementXPath' not found or not an Element")
+            return null
+          } else {
+            element
+          }
+        } else {
+          document.body
+        } ?: run {
+          logw("No body found in the document")
+          return null
+        }
+        val aElems = root.getElementsByTagName("a").asList()
+        logd("Found ${aElems.size} <a> elements")
+        BookmarksDocumentImpl(
+          version = FORMAT_VERSION,
+          bookmarks = aElems.mapNotNull { aElem ->
+            aElem as HTMLAnchorElement
+            val title = aElem.textContent?.trim()?.ifBlank { null } ?: "Untitled"
+            BookmarkItemImpl(
+              title = title,
+              url = aElem.getAttribute("href")
+                ?.ifBlank { null }?.relativeTo(documentUrl)
+                ?: return@mapNotNull null,
+              bookmarks = null,
+            )
+          }
+            .toTypedArray()
+        )
+      } catch (t: Throwable) {
+        logw("Text can't be parsed as HTML: ${t.message} %O", t.stackTraceToString())
+        null
+      }
+    }
+  }
 }
 
 data class BookmarksDocumentImpl(
-    override val version: Int,
+  override val version: Int,
 
-    @Suppress("ArrayInDataClass")
-    override val bookmarks: Array<BookmarkItem>,
+  @Suppress("ArrayInDataClass")
+  override val bookmarks: Array<BookmarkItem>,
 ) : BookmarksDocument
 
 interface BookmarkItem {
-    val title: String
-    val url: String?
-    val bookmarks: Array<BookmarkItem>?
+  val title: String
+  val url: String?
+  val bookmarks: Array<BookmarkItem>?
 }
 
 fun BookmarksDocument.isValid(): Boolean {
-    return version == BookmarksDocument.FORMAT_VERSION
+  return version == BookmarksDocument.FORMAT_VERSION
 }
 
 data class BookmarkItemImpl(
-    override val title: String,
-    override val url: String?,
-    @Suppress("ArrayInDataClass")
-    override val bookmarks: Array<BookmarkItem>?,
+  override val title: String,
+  override val url: String?,
+  @Suppress("ArrayInDataClass")
+  override val bookmarks: Array<BookmarkItem>?,
 ) : BookmarkItem
 
 fun BookmarkItem.isFolder() = bookmarks != null
 fun BookmarkItem.isBookmark() = url != null
+
+fun BookmarksDocument.sanitize(): BookmarksDocument {
+  return BookmarksDocumentImpl(
+    version = BookmarksDocument.FORMAT_VERSION,
+    bookmarks = bookmarks.take(MAX_BOOKMARKS).map { it.sanitize() }.toTypedArray()
+  )
+}
+
+fun BookmarkItem.sanitize(): BookmarkItem {
+  return BookmarkItemImpl(
+    title = title,
+    url = url,
+    bookmarks = bookmarks?.take(MAX_BOOKMARKS)?.map { it.sanitize() }?.toTypedArray()
+  )
+}

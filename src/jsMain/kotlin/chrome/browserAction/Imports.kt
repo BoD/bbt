@@ -30,11 +30,11 @@ package chrome.browserAction
 external fun setBadgeText(badgeText: BadgeText)
 
 external interface BadgeText {
-    var text: String
+  var text: String
 }
 
 external fun setBadgeBackgroundColor(badgeBackgroundColor: BadgeBackgroundColor)
 
 external interface BadgeBackgroundColor {
-    var color: String
+  var color: String
 }

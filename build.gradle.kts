@@ -35,21 +35,16 @@ tasks.register("replaceVersionInManifest") {
         manifestFile.writeText(contents)
     }
 }
-// Make processResources depend on it
-//project.afterEvaluate {
-//    tasks.getByName("processResources").dependsOn("replaceVersionInManifest")
-//}
 
-
-//tasks.withType<Kotlin2JsCompile>().all {
-//    dependsOn("generateVersionKt")
-//}
+// Make jsProcessResources depend on it
+project.afterEvaluate {
+    tasks.getByName("jsProcessResources").dependsOn("replaceVersionInManifest")
+}
 
 kotlin {
     js {
-        browser {
-            binaries.executable()
-        }
+        browser()
+        binaries.executable()
     }
     sourceSets {
         val commonMain by getting {
@@ -62,13 +57,13 @@ kotlin {
 }
 
 tasks.register<Zip>("dist") {
-    dependsOn("jsBrowserProductionWebpack")
-    from(layout.buildDirectory.dir("js/packages/${project.name}/kotlin"))
+    dependsOn("jsBrowserDistribution")
+    from(layout.buildDirectory.dir("dist/js/productionExecutable"))
     include("*", "*/*")
     exclude("*.zip")
-    destinationDirectory.set(layout.buildDirectory.dir("js/packages/${project.name}/kotlin"))
+    destinationDirectory.set(layout.buildDirectory.dir("dist/js/productionExecutable"))
 }
 
 // Run `./gradlew refreshVersions` to update dependencies
-// Run `./gradlew jsBrowserDevelopmentWebpack` for tests (result is in build/js/packages/bbt)
+// Run `./gradlew jsBrowserDevelopmentExecutableDistribution` for tests (result is in build/js/packages/bbt)
 // Run `./gradlew dist` to release (result is in build/js/packages/bbt/kotlin/bbt-x.y.z.zip)

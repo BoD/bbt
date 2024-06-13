@@ -26,7 +26,7 @@
 package org.jraf.bbt.util
 
 val Throwable.transitiveMessage: String
-    get() {
-        val cause = cause
-        return (message ?: "") + if (cause != null) "\nCaused by: ${cause.transitiveMessage}" else ""
-    }
+  get() {
+    val cause = cause
+    return (message ?: "") + if (cause != null) "\nCaused by: ${cause.transitiveMessage}" else ""
+  }

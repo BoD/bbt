@@ -27,6 +27,6 @@ package chrome.alarms
 
 import org.jraf.bbt.util.jsObject
 
-@Suppress("NOTHING_TO_INLINE", "FunctionName")
+@Suppress("NOTHING_TO_INLINE")
 inline fun AlarmCreateInfo(periodInMinutes: Int) = jsObject<AlarmCreateInfo> { this.periodInMinutes = periodInMinutes }
 

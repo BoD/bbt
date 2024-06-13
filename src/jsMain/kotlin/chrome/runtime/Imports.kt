@@ -30,5 +30,5 @@ package chrome.runtime
 external val onInstalled: OnInstalled
 
 external interface OnInstalled {
-    fun addListener(block: () -> Unit)
+  fun addListener(block: () -> Unit)
 }

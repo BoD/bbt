@@ -30,7 +30,7 @@ package chrome.alarms
 external fun create(name: String, alarmInfo: AlarmCreateInfo)
 
 external interface AlarmCreateInfo {
-    var periodInMinutes: Int
+  var periodInMinutes: Int
 }
 
 external fun clearAll()
@@ -38,5 +38,5 @@ external fun clearAll()
 external val onAlarm: OnAlarm
 
 external interface OnAlarm {
-    fun addListener(block: () -> Unit)
+  fun addListener(block: () -> Unit)
 }

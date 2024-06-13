@@ -27,12 +27,12 @@ package chrome.bookmarks
 
 import org.jraf.bbt.util.jsObject
 
-@Suppress("NOTHING_TO_INLINE", "FunctionName")
+@Suppress("NOTHING_TO_INLINE")
 inline fun SearchQuery() = jsObject<SearchQuery> {}
 
-@Suppress("NOTHING_TO_INLINE", "FunctionName")
+@Suppress("NOTHING_TO_INLINE")
 inline fun CreateDetails(parentId: String, title: String, url: String?) = jsObject<CreateDetails> {
-    this.parentId = parentId
-    this.title = title
-    this.url = url
+  this.parentId = parentId
+  this.title = title
+  this.url = url
 }

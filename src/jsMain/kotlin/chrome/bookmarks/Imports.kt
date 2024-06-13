@@ -28,9 +28,9 @@
 package chrome.bookmarks
 
 external interface BookmarkTreeNode {
-    var id: String
-    var title: String
-    var url: String?
+  var id: String
+  var title: String
+  var url: String?
 }
 
 external interface SearchQuery
@@ -42,9 +42,9 @@ external fun getChildren(bookmarkId: String, onResults: (Array<BookmarkTreeNode>
 external fun removeTree(bookmarkId: String, onRemoved: () -> Unit)
 
 external interface CreateDetails {
-    var parentId: String
-    var title: String
-    var url: String?
+  var parentId: String
+  var title: String
+  var url: String?
 }
 
 external fun create(createParameters: CreateDetails, callback: (BookmarkTreeNode) -> Unit)

@@ -54,24 +54,24 @@ import org.w3c.dom.events.Event
 fun isInPopup() = document.getElementById("bbt") != null
 
 fun onPopupOpen() {
-    logd("Popup open")
-    document.getElementById("nameAndVersion")!!.innerHTML = "$EXTENSION_NAME $VERSION"
-    GlobalScope.launch {
-        populateTable()
-    }
+  logd("Popup open")
+  document.getElementById("nameAndVersion")!!.innerHTML = "$EXTENSION_NAME $VERSION"
+  GlobalScope.launch {
+    populateTable()
+  }
 }
 
 private suspend fun populateTable() {
-    val settings = loadSettingsFromStorage()
+  val settings = loadSettingsFromStorage()
 
-    // Enabled checkbox
-    val syncEnabledCheckboxCheckedHtml = if (settings.syncEnabled) "checked" else ""
-    val syncEnabledLabelHtml = if (settings.syncEnabled) {
-        """<div id="txtEnabledDisabled" class="enabledDisabled"">Enabled</div>"""
-    } else {
-        """<div id="txtEnabledDisabled" class="enabledDisabled disabled"">Disabled</div>"""
-    }
-    var tableHtml = """
+  // Enabled checkbox
+  val syncEnabledCheckboxCheckedHtml = if (settings.syncEnabled) "checked" else ""
+  val syncEnabledLabelHtml = if (settings.syncEnabled) {
+    """<div id="txtEnabledDisabled" class="enabledDisabled"">Enabled</div>"""
+  } else {
+    """<div id="txtEnabledDisabled" class="enabledDisabled disabled"">Disabled</div>"""
+  }
+  var tableHtml = """
         <tr>
             <td colspan="4">
                 <div class="onoffswitch"><input $syncEnabledCheckboxCheckedHtml type="checkbox" id="chkSyncEnabled" name="chkSyncEnabled" class="onoffswitch-checkbox"><label class="onoffswitch-label" for="chkSyncEnabled"><span class="onoffswitch-inner"></span><span class="onoffswitch-switch"></span></label></div>
@@ -80,9 +80,9 @@ private suspend fun populateTable() {
         </tr>
     """.trimIndent()
 
-    // Sync items
-    for (syncItem in settings.syncItems) {
-        tableHtml += """
+  // Sync items
+  for (syncItem in settings.syncItems) {
+    tableHtml += """
             <tr>
                 <td><input class="input folderName" type="text" value="${syncItem.folderName}" readonly="true"></td>
                 <td class="url"><input class="input url" type="text" value="${syncItem.remoteBookmarksUrl}" readonly="true"></td>
@@ -90,10 +90,10 @@ private suspend fun populateTable() {
                 <td><button type="button" id="btnRemove_${syncItem.folderName}" value="${syncItem.folderName}">Remove</button>
             </tr>
         """.trimIndent()
-    }
+  }
 
-    // Add item section, validation message, and last sync info
-    tableHtml += """
+  // Add item section, validation message, and last sync info
+  tableHtml += """
             <tr>
                 <td><input class="input folderName" type="text" placeholder="Folder name" id="inputFolderName"></td>
                 <td class="url"><input class="input url" type="text" placeholder="Remote bookmarks URL (RSS, Atom, JSON)" id="inputUrl"></td>
@@ -109,161 +109,164 @@ private suspend fun populateTable() {
             </tr>
     """.trimIndent()
 
-    document.getElementById("table")!!.innerHTML = tableHtml
+  document.getElementById("table")!!.innerHTML = tableHtml
 
-    // Enabled checkbox
-    document.getElementById("chkSyncEnabled")!!.addEventListener("change", ::onSyncEnabledChange)
-    document.getElementById("txtEnabledDisabled")!!.addEventListener("click", ::onSyncEnabledClick)
+  // Enabled checkbox
+  document.getElementById("chkSyncEnabled")!!.addEventListener("change", ::onSyncEnabledChange)
+  document.getElementById("txtEnabledDisabled")!!.addEventListener("click", ::onSyncEnabledClick)
 
-    // Items remove buttons
-    for (syncItem in settings.syncItems) {
-        document.getElementById("btnRemove_${syncItem.folderName}")!!.addEventListener("click", ::onRemoveClick)
-    }
+  // Items remove buttons
+  for (syncItem in settings.syncItems) {
+    document.getElementById("btnRemove_${syncItem.folderName}")!!.addEventListener("click", ::onRemoveClick)
+  }
 
-    // Add item validation and button
-    document.getElementById("inputFolderName")!!.addEventListener("input", ::onAddItemInputChange)
-    document.getElementById("inputUrl")!!.addEventListener("input", ::onAddItemInputChange)
-    document.getElementById("btnAdd")!!.addEventListener("click", ::onAddClick)
+  // Add item validation and button
+  document.getElementById("inputFolderName")!!.addEventListener("input", ::onAddItemInputChange)
+  document.getElementById("inputUrl")!!.addEventListener("input", ::onAddItemInputChange)
+  document.getElementById("btnAdd")!!.addEventListener("click", ::onAddClick)
 
-    // Observe sync state
-    syncStatePublisher.addObserver(onSyncStateChanged)
-    window.onblur = { syncStatePublisher.removeObserver(onSyncStateChanged) }
+  // Observe sync state
+  syncStatePublisher.addObserver(onSyncStateChanged)
+  window.onblur = { syncStatePublisher.removeObserver(onSyncStateChanged) }
 }
 
 private fun updateSyncEnabledText(syncEnabled: Boolean) {
-    val divElement = document.getElementById("txtEnabledDisabled")!!
-    divElement.innerHTML = if (syncEnabled) "Enabled" else "Disabled"
-    if (syncEnabled) divElement.classList.remove("disabled") else divElement.classList.add("disabled")
+  val divElement = document.getElementById("txtEnabledDisabled")!!
+  divElement.innerHTML = if (syncEnabled) "Enabled" else "Disabled"
+  if (syncEnabled) divElement.classList.remove("disabled") else divElement.classList.add("disabled")
 }
 
 private fun onSyncEnabledClick(@Suppress("UNUSED_PARAMETER") event: Event) {
-    val chkSyncEnabled = document.getElementById("chkSyncEnabled") as HTMLInputElement
-    val newSyncEnabled = !chkSyncEnabled.checked
-    chkSyncEnabled.checked = newSyncEnabled
-    updateSyncEnabled(newSyncEnabled)
+  val chkSyncEnabled = document.getElementById("chkSyncEnabled") as HTMLInputElement
+  val newSyncEnabled = !chkSyncEnabled.checked
+  chkSyncEnabled.checked = newSyncEnabled
+  updateSyncEnabled(newSyncEnabled)
 }
 
 private fun onSyncEnabledChange(event: Event) {
-    val syncEnabled = (event.target as HTMLInputElement).checked
-    updateSyncEnabled(syncEnabled)
+  val syncEnabled = (event.target as HTMLInputElement).checked
+  updateSyncEnabled(syncEnabled)
 }
 
 private fun updateSyncEnabled(syncEnabled: Boolean) = GlobalScope.launch {
-    val settings = loadSettingsFromStorage()
-    saveSettingsToStorage(settings.copy(syncEnabled = syncEnabled))
+  val settings = loadSettingsFromStorage()
+  saveSettingsToStorage(settings.copy(syncEnabled = syncEnabled))
 
-    updateSyncEnabledText(syncEnabled)
-    postOnSettingsChanged()
+  updateSyncEnabledText(syncEnabled)
+  postOnSettingsChanged()
 }
 
 private fun onRemoveClick(event: Event) {
-    val folderName = (event.target as HTMLButtonElement).value
-    logd("onRemoveClick folderName=$folderName")
-    GlobalScope.launch {
-        val settings = loadSettingsFromStorage()
-        val settingsToSave = settings.copy(syncItems = settings.syncItems.filterNot { it.folderName == folderName })
-        saveSettingsToStorage(settingsToSave)
+  val folderName = (event.target as HTMLButtonElement).value
+  logd("onRemoveClick folderName=$folderName")
+  GlobalScope.launch {
+    val settings = loadSettingsFromStorage()
+    val settingsToSave = settings.copy(syncItems = settings.syncItems.filterNot { it.folderName == folderName })
+    saveSettingsToStorage(settingsToSave)
 
-        populateTable()
-        postOnSettingsChanged()
-    }
+    populateTable()
+    postOnSettingsChanged()
+  }
 }
 
 private fun onAddClick(@Suppress("UNUSED_PARAMETER") event: Event) {
-    val folderName = (document.getElementById("inputFolderName") as HTMLInputElement).value
-    val url = (document.getElementById("inputUrl") as HTMLInputElement).value
-    logd("onAddClick folderName=$folderName url=$url")
-    GlobalScope.launch {
-        val settings = loadSettingsFromStorage()
-        val syncItemsToSave = settings.syncItems + SyncItem(folderName, url)
-        val settingsToSave = settings.copy(syncItems = syncItemsToSave)
-        saveSettingsToStorage(settingsToSave)
+  val folderName = (document.getElementById("inputFolderName") as HTMLInputElement).value
+  val url = (document.getElementById("inputUrl") as HTMLInputElement).value
+  logd("onAddClick folderName=$folderName url=$url")
+  GlobalScope.launch {
+    val settings = loadSettingsFromStorage()
+    val syncItemsToSave = settings.syncItems + SyncItem(folderName, url)
+    val settingsToSave = settings.copy(syncItems = syncItemsToSave)
+    saveSettingsToStorage(settingsToSave)
 
-        populateTable()
-        postOnSettingsChanged()
-    }
+    populateTable()
+    postOnSettingsChanged()
+  }
 }
 
 private fun onAddItemInputChange(@Suppress("UNUSED_PARAMETER") event: Event) {
-    val folderName = (document.getElementById("inputFolderName") as HTMLInputElement).value
-    val url = (document.getElementById("inputUrl") as HTMLInputElement).value
-    val btnAdd = document.getElementById("btnAdd") as HTMLButtonElement
+  val folderName = (document.getElementById("inputFolderName") as HTMLInputElement).value
+  val url = (document.getElementById("inputUrl") as HTMLInputElement).value
+  val btnAdd = document.getElementById("btnAdd") as HTMLButtonElement
 
-    GlobalScope.launch {
-        // Folder
-        val isExistingFolder = isExistingFolder(folderName)
-        val isAlreadySyncedFolder = isAlreadySyncedFolder(folderName)
-        val tdFolderNameError = document.getElementById("tdFolderNameError")!!
-        tdFolderNameError.innerHTML = when {
-            folderName.isBlank() -> "&nbsp;"
-            !isExistingFolder -> "Bookmark folder doesn't exist"
-            isAlreadySyncedFolder -> "Folder is already added"
-            else -> "&nbsp;"
-        }
-
-        // Url
-        val isValidUrl = isValidUrl(url)
-        val tdUrlError = document.getElementById("tdUrlError")!!
-        tdUrlError.innerHTML = when {
-            url.isBlank() -> "&nbsp;"
-            !isValidUrl -> "Invalid URL"
-            else -> "&nbsp;"
-        }
-
-        val areInputsValid = isExistingFolder && !isAlreadySyncedFolder && isValidUrl
-        btnAdd.disabled = !areInputsValid
+  GlobalScope.launch {
+    // Folder
+    val isExistingFolder = isExistingFolder(folderName)
+    val isAlreadySyncedFolder = isAlreadySyncedFolder(folderName)
+    val tdFolderNameError = document.getElementById("tdFolderNameError")!!
+    tdFolderNameError.innerHTML = when {
+      folderName.isBlank() -> "&nbsp;"
+      !isExistingFolder -> "Bookmark folder doesn't exist"
+      isAlreadySyncedFolder -> "Folder is already added"
+      else -> "&nbsp;"
     }
+
+    // Url
+    val isValidUrl = isValidUrl(url)
+    val tdUrlError = document.getElementById("tdUrlError")!!
+    tdUrlError.innerHTML = when {
+      url.isBlank() -> "&nbsp;"
+      !isValidUrl -> "Invalid URL"
+      else -> "&nbsp;"
+    }
+
+    val areInputsValid = isExistingFolder && !isAlreadySyncedFolder && isValidUrl
+    btnAdd.disabled = !areInputsValid
+  }
 }
 
 private suspend fun isAlreadySyncedFolder(folderName: String): Boolean {
-    val settings = loadSettingsFromStorage()
-    return settings.syncItems.any { it.folderName.equalsIgnoreCase(folderName) }
+  val settings = loadSettingsFromStorage()
+  return settings.syncItems.any { it.folderName.equalsIgnoreCase(folderName) }
 }
 
 private fun postOnSettingsChanged() = postMessageToBackgroundPage("onSettingsChanged")
 
 private val onSyncStateChanged: (SyncState) -> Unit = { syncState ->
-    logd("syncState=$syncState")
-    val tdLastSync = document.getElementById("tdLastSync")!!
-    if (syncState.isSyncing) {
-        tdLastSync.innerHTML = "Sync ongoing…"
+  logd("syncState=$syncState")
+  val tdLastSync = document.getElementById("tdLastSync")!!
+  if (syncState.isSyncing) {
+    tdLastSync.innerHTML = "Sync ongoing…"
+  } else {
+    tdLastSync.innerHTML = if (syncState.lastSync == null) {
+      ""
     } else {
-        tdLastSync.innerHTML = if (syncState.lastSync == null) {
-            ""
-        } else {
-            "Last sync: ${syncState.lastSync.toLocaleDateString()} ${
-                syncState.lastSync.toLocaleTimeString(locales = emptyArray(), options = dateLocaleOptions {
-                    hour = "2-digit"
-                    minute = "2-digit"
-                })
-            }"
-        }
+      "Last sync: ${syncState.lastSync.toLocaleDateString()} ${
+        syncState.lastSync.toLocaleTimeString(locales = emptyArray(), options = dateLocaleOptions {
+          hour = "2-digit"
+          minute = "2-digit"
+        })
+      }"
     }
+  }
 
-    GlobalScope.launch {
-        val settings = loadSettingsFromStorage()
-        for (syncItem in settings.syncItems) {
-            val folderName = syncItem.folderName
-            val imgSyncState = document.getElementById("imgSyncState_$folderName") as HTMLImageElement
-            val folderSyncState = syncState.folderSyncStates[folderName]
-            when {
-                folderSyncState == null -> {
-                    imgSyncState.src = "icons/empty.png"
-                    imgSyncState.title = ""
-                }
-                folderSyncState.isSyncing -> {
-                    imgSyncState.src = "icons/syncing.png"
-                    imgSyncState.title = "Sync ongoing…"
-                }
-                folderSyncState.isError -> {
-                    imgSyncState.src = "icons/warning.png"
-                    imgSyncState.title = "Could not sync: ${(folderSyncState.unsafeCast<FolderSyncState.Error>()).cause.transitiveMessage}"
-                }
-                folderSyncState.isSuccess -> {
-                    imgSyncState.src = "icons/success.png"
-                    imgSyncState.title = "Sync successful"
-                }
-            }
+  GlobalScope.launch {
+    val settings = loadSettingsFromStorage()
+    for (syncItem in settings.syncItems) {
+      val folderName = syncItem.folderName
+      val imgSyncState = document.getElementById("imgSyncState_$folderName") as HTMLImageElement
+      val folderSyncState = syncState.folderSyncStates[folderName]
+      when {
+        folderSyncState == null -> {
+          imgSyncState.src = "icons/empty.png"
+          imgSyncState.title = ""
         }
+
+        folderSyncState.isSyncing -> {
+          imgSyncState.src = "icons/syncing.png"
+          imgSyncState.title = "Sync ongoing…"
+        }
+
+        folderSyncState.isError -> {
+          imgSyncState.src = "icons/warning.png"
+          imgSyncState.title = "Could not sync: ${(folderSyncState.unsafeCast<FolderSyncState.Error>()).cause.transitiveMessage}"
+        }
+
+        folderSyncState.isSuccess -> {
+          imgSyncState.src = "icons/success.png"
+          imgSyncState.title = "Sync successful"
+        }
+      }
     }
+  }
 }

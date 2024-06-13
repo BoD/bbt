@@ -7,7 +7,7 @@
  *                              /___/
  * repository.
  *
- * Copyright (C) 2020-present Benoit 'BoD' Lubek (BoD@JRAF.org)
+ * Copyright (C) 2024-present Benoit 'BoD' Lubek (BoD@JRAF.org)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,13 +25,10 @@
 
 package org.jraf.bbt.util
 
-import org.w3c.dom.url.URL
-
-fun isValidUrl(url: String): Boolean {
-  try {
-    URL(url)
-  } catch (t: Throwable) {
-    return false
-  }
-  return true
+fun String.relativeTo(documentUrl: String) = if (startsWith("http://") || startsWith("https://")) {
+  this
+} else if (startsWith("/")) {
+  documentUrl.substringBefore("://") + "://" + documentUrl.substringAfter("://").substringBefore("/") + this
+} else {
+  documentUrl.substringBeforeLast("/") + "/" + this
 }

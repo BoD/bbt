@@ -40,12 +40,14 @@ import org.jraf.bbt.model.BookmarkItem
 import org.jraf.bbt.model.BookmarksDocument
 import org.jraf.bbt.model.SyncState
 import org.jraf.bbt.model.isBookmark
+import org.jraf.bbt.model.sanitize
 import org.jraf.bbt.popup.isInPopup
 import org.jraf.bbt.popup.onPopupOpen
 import org.jraf.bbt.settings.loadSettingsFromStorage
 import org.jraf.bbt.util.CachedPublisher
 import org.jraf.bbt.util.FetchException
 import org.jraf.bbt.util.createBookmark
+import org.jraf.bbt.util.decodeURIComponent
 import org.jraf.bbt.util.emptyFolder
 import org.jraf.bbt.util.fetchText
 import org.jraf.bbt.util.findFolder
@@ -63,141 +65,149 @@ private const val ALARM_NAME = EXTENSION_NAME
 private val backgroundPage = chrome.extension.getBackgroundPage()
 
 val syncStatePublisher: CachedPublisher<SyncState> by backgroundPage {
-    CachedPublisher(SyncState.initialState())
+  CachedPublisher(SyncState.initialState())
 }
 
 // Note: this is executed when the extension starts, and
 // also every time popup.html is opened.
 fun main() {
-    if (isInPopup()) {
-        onPopupOpen()
-    } else {
-        logi("$EXTENSION_NAME $VERSION")
+  if (isInPopup()) {
+    onPopupOpen()
+  } else {
+    logi("$EXTENSION_NAME $VERSION")
 
-        window.addEventListener("message", ::onMessage)
+    window.addEventListener("message", ::onMessage)
 
-        chrome.alarms.onAlarm.addListener {
-            logd("Alarm triggered")
-            GlobalScope.launch {
-                syncFolders()
-            }
-        }
-        GlobalScope.launch {
-            onSettingsChanged()
-        }
+    chrome.alarms.onAlarm.addListener {
+      logd("Alarm triggered")
+      GlobalScope.launch {
+        syncFolders()
+      }
     }
+    GlobalScope.launch {
+      onSettingsChanged()
+    }
+  }
 }
 
 private fun onMessage(event: Event) {
-    event as MessageEvent
-    logd("onMessage data=${event.data}")
-    GlobalScope.launch {
-        onSettingsChanged()
-    }
+  event as MessageEvent
+  logd("onMessage data=${event.data}")
+  GlobalScope.launch {
+    onSettingsChanged()
+  }
 }
 
 private suspend fun onSettingsChanged() {
-    val settings = loadSettingsFromStorage()
-    if (settings.syncEnabled) {
-        logd("Sync enabled, scheduled every $SYNC_PERIOD_MINUTES minutes")
-        updateBadge(true)
-        startScheduling()
-        // Launch the sync in another coroutine to not make this fun blocking too long
-        GlobalScope.launch {
-            syncFolders()
-        }
-    } else {
-        logd("Sync disabled")
-        updateBadge(false)
-        stopScheduling()
+  val settings = loadSettingsFromStorage()
+  if (settings.syncEnabled) {
+    logd("Sync enabled, scheduled every $SYNC_PERIOD_MINUTES minutes")
+    updateBadge(true)
+    startScheduling()
+    // Launch the sync in another coroutine to not make this fun blocking too long
+    GlobalScope.launch {
+      syncFolders()
     }
+  } else {
+    logd("Sync disabled")
+    updateBadge(false)
+    stopScheduling()
+  }
 }
 
 private fun updateBadge(enabled: Boolean) {
-    if (enabled) {
-        chrome.browserAction.setBadgeText(BadgeText(""))
-    } else {
-        chrome.browserAction.setBadgeText(BadgeText("OFF"))
-        chrome.browserAction.setBadgeBackgroundColor(BadgeBackgroundColor("#808080"))
-    }
+  if (enabled) {
+    chrome.browserAction.setBadgeText(BadgeText(""))
+  } else {
+    chrome.browserAction.setBadgeText(BadgeText("OFF"))
+    chrome.browserAction.setBadgeBackgroundColor(BadgeBackgroundColor("#808080"))
+  }
 }
 
 private fun startScheduling() {
-    chrome.alarms.create(ALARM_NAME, AlarmCreateInfo(periodInMinutes = SYNC_PERIOD_MINUTES))
+  chrome.alarms.create(ALARM_NAME, AlarmCreateInfo(periodInMinutes = SYNC_PERIOD_MINUTES))
 }
 
 private fun stopScheduling() {
-    chrome.alarms.clearAll()
+  chrome.alarms.clearAll()
 }
 
 private suspend fun syncFolders() {
-    logd("Start syncing...")
-    publishSyncState { asStartSyncing() }
-    val settings = loadSettingsFromStorage()
-    for (syncItem in settings.syncItems) {
-        publishSyncState { asSyncing(folderName = syncItem.folderName) }
-        try {
-            syncFolder(syncItem.folderName, syncItem.remoteBookmarksUrl)
-            logd("Finished sync of '${syncItem.folderName}' successfully")
-            publishSyncState { asSuccess(folderName = syncItem.folderName) }
-        } catch (e: Exception) {
-            logd("Finished sync of '${syncItem.folderName}' with error")
-            publishSyncState { asError(folderName = syncItem.folderName, cause = e) }
-        }
+  logd("Start syncing...")
+  publishSyncState { asStartSyncing() }
+  val settings = loadSettingsFromStorage()
+  for (syncItem in settings.syncItems) {
+    publishSyncState { asSyncing(folderName = syncItem.folderName) }
+    try {
+      syncFolder(syncItem.folderName, syncItem.remoteBookmarksUrl)
+      logd("Finished sync of '${syncItem.folderName}' successfully")
+      publishSyncState { asSuccess(folderName = syncItem.folderName) }
+    } catch (e: Exception) {
+      logd("Finished sync of '${syncItem.folderName}' with error")
+      publishSyncState { asError(folderName = syncItem.folderName, cause = e) }
     }
-    publishSyncState { asFinishSyncing() }
-    logd("Sync finished")
-    logd("")
+  }
+  publishSyncState { asFinishSyncing() }
+  logd("Sync finished")
+  logd("")
 }
 
 private suspend fun syncFolder(folderName: String, remoteBookmarksUrl: String) {
-    logd("Syncing '$folderName' to $remoteBookmarksUrl")
-    val folder = findFolder(folderName) ?: throw RuntimeException("Could not find folder '$folderName'")
-    val bookmarksDocument = try {
-        fetchRemoteBookmarks(remoteBookmarksUrl)
-    } catch (e: Exception) {
-        throw RuntimeException("Could not fetch remote bookmarks from $remoteBookmarksUrl for folder '$folderName'", e)
-    }
-    val bookmarkItems = bookmarksDocument.bookmarks
-    emptyFolder(folder)
-    logd("Populating folder ${folder.title}")
-    populateFolder(folder, bookmarkItems)
+  logd("Syncing '$folderName' to $remoteBookmarksUrl")
+  val folder = findFolder(folderName) ?: throw RuntimeException("Could not find folder '$folderName'")
+  val bookmarksDocument = try {
+    fetchRemoteBookmarks(remoteBookmarksUrl)
+  } catch (e: Exception) {
+    throw RuntimeException("Could not fetch remote bookmarks from $remoteBookmarksUrl for folder '$folderName'", e)
+  }
+  val bookmarkItems = bookmarksDocument.bookmarks
+  emptyFolder(folder)
+  logd("Populating folder ${folder.title}")
+  populateFolder(folder, bookmarkItems)
 }
 
 private suspend fun fetchRemoteBookmarks(remoteBookmarksUrl: String): BookmarksDocument {
-    logd("Fetching bookmarks from remote $remoteBookmarksUrl")
-    return try {
-        val fetchedText = fetchText(remoteBookmarksUrl)
-        BookmarksDocument.parseJson(fetchedText)
-            ?: run {
-                logd("Could not parse fetched text as JSON, trying RSS")
-                BookmarksDocument.parseRssOrAtom(fetchedText)
-            }
-            ?: run {
-                logd("Could not parse fetched text as RSS, trying HTML")
-                BookmarksDocument.parseHtml(fetchedText)
-            }
-            ?: run {
-                logd("Could not parse fetched text as RSS, give up")
-                throw RuntimeException("Fetched object doesn't seem to be either valid `bookmarks` JSON format document, RSS feed, or HTML")
-            }
-    } catch (e: FetchException) {
-        throw RuntimeException("Could not fetch from remote $remoteBookmarksUrl", e)
-    }
+  logd("Fetching bookmarks from remote $remoteBookmarksUrl")
+  return try {
+    val fetchedText = fetchText(remoteBookmarksUrl)
+    BookmarksDocument.parseJson(fetchedText)
+      ?: run {
+        logd("Could not parse fetched text as JSON, trying RSS/Atom")
+        BookmarksDocument.parseRssOrAtom(fetchedText)
+      }
+      ?: run {
+        logd("Could not parse fetched text as RSS/Atom, trying HTML")
+        BookmarksDocument.parseHtml(
+          text = fetchedText,
+          elementXPath = remoteBookmarksUrl.extractElementXPathFragment(),
+          documentUrl = remoteBookmarksUrl
+        )
+      }
+      ?: run {
+        logd("Could not parse fetched text as HTML, give up")
+        throw RuntimeException("Fetched object doesn't seem to be either valid `bookmarks` JSON format document, RSS/Atom feed, or HTML")
+      }
+  } catch (e: FetchException) {
+    throw RuntimeException("Could not fetch from remote $remoteBookmarksUrl", e)
+  }.sanitize()
 }
 
 private suspend fun populateFolder(folder: BookmarkTreeNode, bookmarkItems: Array<BookmarkItem>) {
-    for (bookmarkItem in bookmarkItems) {
-        if (bookmarkItem.isBookmark()) {
-            createBookmark(parentId = folder.id, title = bookmarkItem.title, url = bookmarkItem.url)
-        } else {
-            val createdFolder = createBookmark(parentId = folder.id, title = bookmarkItem.title)
-            // Recurse
-            populateFolder(createdFolder, bookmarkItem.bookmarks!!)
-        }
+  for (bookmarkItem in bookmarkItems) {
+    if (bookmarkItem.isBookmark()) {
+      createBookmark(parentId = folder.id, title = bookmarkItem.title, url = bookmarkItem.url)
+    } else {
+      val createdFolder = createBookmark(parentId = folder.id, title = bookmarkItem.title)
+      // Recurse
+      populateFolder(createdFolder, bookmarkItem.bookmarks!!)
     }
+  }
 }
 
 private fun publishSyncState(syncState: SyncState.() -> SyncState) {
-    syncStatePublisher.publish(syncStatePublisher.value!!.syncState())
+  syncStatePublisher.publish(syncStatePublisher.value!!.syncState())
+}
+
+private fun String.extractElementXPathFragment(): String? {
+  return this.substringAfterLast("#__element=", "").ifBlank { null }?.let { decodeURIComponent(it) }
 }

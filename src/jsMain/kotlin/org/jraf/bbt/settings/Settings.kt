@@ -31,50 +31,70 @@ import kotlin.coroutines.suspendCoroutine
 
 private class StorageSettings(
     val syncEnabled: Boolean,
-    val syncItems: Array<SyncItem>
+    val syncItems: Array<StorageSyncItem>,
+)
+
+private class StorageSyncItem(
+  val folderName: String,
+  val remoteBookmarksUrl: String,
 )
 
 data class Settings(
     val syncEnabled: Boolean,
-    val syncItems: List<SyncItem>
+    val syncItems: List<SyncItem>,
 )
 
 data class SyncItem(
     val folderName: String,
-    val remoteBookmarksUrl: String
+    val remoteBookmarksUrl: String,
 )
 
 private fun Settings.toStorageSettings() = StorageSettings(
-    syncEnabled = syncEnabled,
-    syncItems = syncItems.toTypedArray()
+  syncEnabled = syncEnabled,
+  syncItems = syncItems.map {
+    StorageSyncItem(
+      folderName = it.folderName,
+      remoteBookmarksUrl = it.remoteBookmarksUrl
+    )
+  }.toTypedArray()
 )
 
-
 suspend fun loadSettingsFromStorage(): Settings {
-    return suspendCoroutine { cont ->
-        chrome.storage.sync.get("settings") { items ->
-            val obj = items.settings
-            val res = if (obj == undefined) {
-                Settings(
-                    syncEnabled = true,
-                    syncItems = listOf(SyncItem("Sample", "https://jraf.org/static/tmp/bbt/bookmarks.json"))
-                )
-            } else {
-                Settings(
-                    syncEnabled = obj.syncEnabled as Boolean,
-                    syncItems = (obj.syncItems as Array<SyncItem>).toList()
-                )
-            }
-            cont.resume(res)
-        }
+  return suspendCoroutine { cont ->
+    chrome.storage.sync.get("settings") { items ->
+      val obj = items.settings
+      val res = if (obj == undefined) {
+        Settings(
+          syncEnabled = true,
+          syncItems = listOf(
+            SyncItem(
+              folderName = "Sample",
+              remoteBookmarksUrl = "https://en.wikipedia.org/wiki/Wikipedia:Featured_articles#__element=//h3[@data-mw-thread-id='h-Elements-Chemistry_and_mineralogy']/following-sibling::*[1]"
+            )
+          )
+        )
+      } else {
+        val storageSettings = obj.unsafeCast<StorageSettings>()
+        Settings(
+          syncEnabled = storageSettings.syncEnabled,
+          syncItems = storageSettings.syncItems.map {
+            SyncItem(
+              folderName = it.folderName,
+              remoteBookmarksUrl = it.remoteBookmarksUrl
+            )
+          }
+        )
+      }
+      cont.resume(res)
     }
+  }
 }
 
 suspend fun saveSettingsToStorage(settings: Settings) {
-    logd("Save settings to storage: %O", settings)
-    suspendCoroutine<Unit> { cont ->
-        val obj = js("{}")
-        obj.settings = settings.toStorageSettings()
-        chrome.storage.sync.set(obj) { cont.resume(Unit) }
-    }
+  logd("Save settings to storage: %O", settings)
+  suspendCoroutine { cont ->
+    val obj = js("{}")
+    obj.settings = settings.toStorageSettings()
+    chrome.storage.sync.set(obj) { cont.resume(Unit) }
+  }
 }

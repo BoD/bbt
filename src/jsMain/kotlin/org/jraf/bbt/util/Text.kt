@@ -23,8 +23,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-@file:OptIn(ExperimentalStdlibApi::class)
-
 package org.jraf.bbt.util
+
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/decodeURIComponent
+external fun decodeURIComponent(encodedURI: String): String
 
 fun String.equalsIgnoreCase(otherString: String) = uppercase() == otherString.uppercase()
