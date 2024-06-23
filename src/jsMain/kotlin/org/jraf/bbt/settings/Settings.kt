@@ -25,13 +25,12 @@
 
 package org.jraf.bbt.settings
 
+import kotlinx.coroutines.await
 import org.jraf.bbt.util.logd
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 
 private class StorageSettings(
-    val syncEnabled: Boolean,
-    val syncItems: Array<StorageSyncItem>,
+  val syncEnabled: Boolean,
+  val syncItems: Array<StorageSyncItem>,
 )
 
 private class StorageSyncItem(
@@ -40,13 +39,13 @@ private class StorageSyncItem(
 )
 
 data class Settings(
-    val syncEnabled: Boolean,
-    val syncItems: List<SyncItem>,
+  val syncEnabled: Boolean,
+  val syncItems: List<SyncItem>,
 )
 
 data class SyncItem(
-    val folderName: String,
-    val remoteBookmarksUrl: String,
+  val folderName: String,
+  val remoteBookmarksUrl: String,
 )
 
 private fun Settings.toStorageSettings() = StorageSettings(
@@ -60,41 +59,35 @@ private fun Settings.toStorageSettings() = StorageSettings(
 )
 
 suspend fun loadSettingsFromStorage(): Settings {
-  return suspendCoroutine { cont ->
-    chrome.storage.sync.get("settings") { items ->
-      val obj = items.settings
-      val res = if (obj == undefined) {
-        Settings(
-          syncEnabled = true,
-          syncItems = listOf(
-            SyncItem(
-              folderName = "Sample",
-              remoteBookmarksUrl = "https://en.wikipedia.org/wiki/Wikipedia:Featured_articles#__element=//h3[@data-mw-thread-id='h-Elements-Chemistry_and_mineralogy']/following-sibling::*[1]"
-            )
-          )
+  val items = chrome.storage.sync.get("settings").await()
+  val obj = items.settings
+  return if (obj == undefined) {
+    Settings(
+      syncEnabled = true,
+      syncItems = listOf(
+        SyncItem(
+          folderName = "Sample",
+          remoteBookmarksUrl = "https://en.wikipedia.org/wiki/Wikipedia:Featured_articles#__element=//h3[@data-mw-thread-id='h-Elements-Chemistry_and_mineralogy']/following-sibling::*[1]"
         )
-      } else {
-        val storageSettings = obj.unsafeCast<StorageSettings>()
-        Settings(
-          syncEnabled = storageSettings.syncEnabled,
-          syncItems = storageSettings.syncItems.map {
-            SyncItem(
-              folderName = it.folderName,
-              remoteBookmarksUrl = it.remoteBookmarksUrl
-            )
-          }
+      )
+    )
+  } else {
+    val storageSettings = obj.unsafeCast<StorageSettings>()
+    Settings(
+      syncEnabled = storageSettings.syncEnabled,
+      syncItems = storageSettings.syncItems.map {
+        SyncItem(
+          folderName = it.folderName,
+          remoteBookmarksUrl = it.remoteBookmarksUrl
         )
       }
-      cont.resume(res)
-    }
+    )
   }
 }
 
 suspend fun saveSettingsToStorage(settings: Settings) {
   logd("Save settings to storage: %O", settings)
-  suspendCoroutine { cont ->
-    val obj = js("{}")
-    obj.settings = settings.toStorageSettings()
-    chrome.storage.sync.set(obj) { cont.resume(Unit) }
-  }
+  val obj = js("{}")
+  obj.settings = settings.toStorageSettings()
+  chrome.storage.sync.set(obj).await()
 }

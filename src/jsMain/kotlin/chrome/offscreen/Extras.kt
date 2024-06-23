@@ -23,24 +23,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.jraf.bbt.util
+package chrome.offscreen
 
-import kotlin.js.Console
-import kotlin.js.Date
+import org.jraf.bbt.util.jsObject
 
-private fun getConsole() = chrome.extension.getBackgroundPage().asDynamic().console.unsafeCast<Console>()
-
-fun logd(format: String, vararg params: Any?) {
-  val date = Date()
-  getConsole().log("${date.toLocaleDateString()} ${date.toLocaleTimeString()} - $format", *params)
+@Suppress("NOTHING_TO_INLINE")
+inline fun CreateParameters(
+  justification: String,
+  reasons: Array<String>,
+  url: String,
+) = jsObject<CreateParameters> {
+  this.justification = justification
+  this.reasons = reasons
+  this.url = url
 }
 
-fun logi(format: String, vararg params: Any?) {
-  val date = Date()
-  getConsole().info("${date.toLocaleDateString()} ${date.toLocaleTimeString()} - $format", *params)
-}
-
-fun logw(format: String, vararg params: Any?) {
-  val date = Date()
-  getConsole().warn("${date.toLocaleDateString()} ${date.toLocaleTimeString()} - $format", *params)
-}

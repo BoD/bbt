@@ -25,19 +25,19 @@
 
 package org.jraf.bbt.util
 
-import kotlinx.browser.window
 import kotlinx.coroutines.await
 import kotlinx.coroutines.withTimeout
 import org.w3c.fetch.NO_CACHE
 import org.w3c.fetch.RequestCache
 import org.w3c.fetch.RequestInit
+import org.w3c.fetch.fetch
 
 private const val DEFAULT_TIMEOUT_MS = 45_000L
 
 suspend fun fetchText(url: String, timeoutMs: Long = DEFAULT_TIMEOUT_MS): String {
   val res = try {
     withTimeout(timeoutMs) {
-      window.fetch(url, object : RequestInit {
+      fetch(url, object : RequestInit {
         override var cache: RequestCache? = RequestCache.NO_CACHE
       }).await()
     }

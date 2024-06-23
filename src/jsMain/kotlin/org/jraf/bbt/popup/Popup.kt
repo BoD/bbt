@@ -27,14 +27,13 @@
 
 package org.jraf.bbt.popup
 
+//import org.jraf.bbt.main.syncStatePublisher
 import kotlinx.browser.document
-import kotlinx.browser.window
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.jraf.bbt.VERSION
 import org.jraf.bbt.main.EXTENSION_NAME
-import org.jraf.bbt.main.syncStatePublisher
 import org.jraf.bbt.model.FolderSyncState
 import org.jraf.bbt.model.SyncState
 import org.jraf.bbt.settings.SyncItem
@@ -44,14 +43,17 @@ import org.jraf.bbt.util.equalsIgnoreCase
 import org.jraf.bbt.util.isExistingFolder
 import org.jraf.bbt.util.isValidUrl
 import org.jraf.bbt.util.logd
-import org.jraf.bbt.util.postMessageToBackgroundPage
+import org.jraf.bbt.util.sendSettingsChangedMessage
 import org.jraf.bbt.util.transitiveMessage
 import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLImageElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.events.Event
 
-fun isInPopup() = document.getElementById("bbt") != null
+/**
+ * We don't have a document in the service worker, but only in the popup.
+ */
+fun isInPopup(): Boolean = jsTypeOf(document) != "undefined"
 
 fun onPopupOpen() {
   logd("Popup open")
@@ -126,8 +128,8 @@ private suspend fun populateTable() {
   document.getElementById("btnAdd")!!.addEventListener("click", ::onAddClick)
 
   // Observe sync state
-  syncStatePublisher.addObserver(onSyncStateChanged)
-  window.onblur = { syncStatePublisher.removeObserver(onSyncStateChanged) }
+//  syncStatePublisher.addObserver(onSyncStateChanged)
+//  window.onblur = { syncStatePublisher.removeObserver(onSyncStateChanged) }
 }
 
 private fun updateSyncEnabledText(syncEnabled: Boolean) {
@@ -153,7 +155,7 @@ private fun updateSyncEnabled(syncEnabled: Boolean) = GlobalScope.launch {
   saveSettingsToStorage(settings.copy(syncEnabled = syncEnabled))
 
   updateSyncEnabledText(syncEnabled)
-  postOnSettingsChanged()
+  sendSettingsChangedMessage()
 }
 
 private fun onRemoveClick(event: Event) {
@@ -165,7 +167,7 @@ private fun onRemoveClick(event: Event) {
     saveSettingsToStorage(settingsToSave)
 
     populateTable()
-    postOnSettingsChanged()
+    sendSettingsChangedMessage()
   }
 }
 
@@ -180,7 +182,7 @@ private fun onAddClick(@Suppress("UNUSED_PARAMETER") event: Event) {
     saveSettingsToStorage(settingsToSave)
 
     populateTable()
-    postOnSettingsChanged()
+    sendSettingsChangedMessage()
   }
 }
 
@@ -219,8 +221,6 @@ private suspend fun isAlreadySyncedFolder(folderName: String): Boolean {
   val settings = loadSettingsFromStorage()
   return settings.syncItems.any { it.folderName.equalsIgnoreCase(folderName) }
 }
-
-private fun postOnSettingsChanged() = postMessageToBackgroundPage("onSettingsChanged")
 
 private val onSyncStateChanged: (SyncState) -> Unit = { syncState ->
   logd("syncState=$syncState")

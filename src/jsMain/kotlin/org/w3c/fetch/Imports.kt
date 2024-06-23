@@ -7,7 +7,7 @@
  *                              /___/
  * repository.
  *
- * Copyright (C) 2020-present Benoit 'BoD' Lubek (BoD@JRAF.org)
+ * Copyright (C) 2024-present Benoit 'BoD' Lubek (BoD@JRAF.org)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,12 +23,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package chrome.browserAction
+package org.w3c.fetch
 
-import org.jraf.bbt.util.jsObject
+import kotlin.js.Promise
 
-@Suppress("NOTHING_TO_INLINE")
-inline fun BadgeText(text: String) = jsObject<BadgeText> { this.text = text }
-
-@Suppress("NOTHING_TO_INLINE")
-inline fun BadgeBackgroundColor(color: String) = jsObject<BadgeBackgroundColor> { this.color = color }
+external fun fetch(input: dynamic, init: RequestInit = definedExternally): Promise<Response>

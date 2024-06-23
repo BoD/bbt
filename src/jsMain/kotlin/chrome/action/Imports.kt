@@ -23,38 +23,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-@file:OptIn(ExperimentalJsExport::class)
+@file:JsQualifier("chrome.action")
 
-package org.jraf.bbt.util
+package chrome.action
 
-// Need @JsExport because these will be jsonified / dejsonified
-@JsExport
-class Message(
-  val type: Int,
-  val data: Any?,
-)
+external fun setBadgeText(badgeText: BadgeText)
 
-enum class MessageType {
-  LOG,
-  SETTINGS_CHANGED,
+external interface BadgeText {
+  var text: String
 }
 
-fun sendMessage(message: Message) = chrome.runtime.sendMessage(message) {}
+external fun setBadgeBackgroundColor(badgeBackgroundColor: BadgeBackgroundColor)
 
-@JsExport
-class LogMessage(
-  val level: Int,
-  val format: String,
-  val params: Array<out Any?>,
-)
-
-fun sendLogMessage(level: LogLevel, format: String, params: Array<out Any?>) {
-  val logMessage = LogMessage(level = level.ordinal, format = format, params = params)
-  val message = Message(type = MessageType.LOG.ordinal, data = logMessage)
-  sendMessage(message)
-}
-
-fun sendSettingsChangedMessage() {
-  val message = Message(type = MessageType.SETTINGS_CHANGED.ordinal, data = null)
-  sendMessage(message)
+external interface BadgeBackgroundColor {
+  var color: String
 }

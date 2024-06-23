@@ -32,3 +32,11 @@ external val onInstalled: OnInstalled
 external interface OnInstalled {
   fun addListener(block: () -> Unit)
 }
+
+external val onMessage: OnMessage
+
+external interface OnMessage {
+  fun addListener(callback: (message: Any, sender: Any, sendResponse: (Any) -> Unit) -> Unit)
+}
+
+external fun sendMessage(message: Any, callback: (Any) -> Unit)

@@ -65,5 +65,5 @@ tasks.register<Zip>("dist") {
 }
 
 // Run `./gradlew refreshVersions` to update dependencies
-// Run `./gradlew jsBrowserDevelopmentExecutableDistribution` for tests (result is in build/js/packages/bbt)
+// Run `./gradlew jsBrowserDevelopmentExecutableDistribution` for tests (result is in build/dist/js/developmentExecutable)
 // Run `./gradlew dist` to release (result is in build/js/packages/bbt/kotlin/bbt-x.y.z.zip)

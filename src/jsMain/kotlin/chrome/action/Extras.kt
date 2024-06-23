@@ -23,18 +23,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-@file:JsQualifier("chrome.browserAction")
+package chrome.action
 
-package chrome.browserAction
+import org.jraf.bbt.util.jsObject
 
-external fun setBadgeText(badgeText: BadgeText)
+@Suppress("NOTHING_TO_INLINE")
+inline fun BadgeText(text: String) = jsObject<BadgeText> { this.text = text }
 
-external interface BadgeText {
-  var text: String
-}
-
-external fun setBadgeBackgroundColor(badgeBackgroundColor: BadgeBackgroundColor)
-
-external interface BadgeBackgroundColor {
-  var color: String
-}
+@Suppress("NOTHING_TO_INLINE")
+inline fun BadgeBackgroundColor(color: String) = jsObject<BadgeBackgroundColor> { this.color = color }

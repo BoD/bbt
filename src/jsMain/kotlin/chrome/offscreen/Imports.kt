@@ -23,38 +23,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-@file:OptIn(ExperimentalJsExport::class)
+@file:JsQualifier("chrome.offscreen")
 
-package org.jraf.bbt.util
+package chrome.offscreen
 
-// Need @JsExport because these will be jsonified / dejsonified
-@JsExport
-class Message(
-  val type: Int,
-  val data: Any?,
-)
+import kotlin.js.Promise
 
-enum class MessageType {
-  LOG,
-  SETTINGS_CHANGED,
+external interface CreateParameters {
+  var justification: String
+  var reasons: Array<String>
+  var url: String
 }
 
-fun sendMessage(message: Message) = chrome.runtime.sendMessage(message) {}
-
-@JsExport
-class LogMessage(
-  val level: Int,
-  val format: String,
-  val params: Array<out Any?>,
-)
-
-fun sendLogMessage(level: LogLevel, format: String, params: Array<out Any?>) {
-  val logMessage = LogMessage(level = level.ordinal, format = format, params = params)
-  val message = Message(type = MessageType.LOG.ordinal, data = logMessage)
-  sendMessage(message)
-}
-
-fun sendSettingsChangedMessage() {
-  val message = Message(type = MessageType.SETTINGS_CHANGED.ordinal, data = null)
-  sendMessage(message)
-}
+external fun createDocument(parameters: CreateParameters): Promise<Unit>

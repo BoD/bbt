@@ -1,5 +1,5 @@
 {
-  "manifest_version": 2,
+  "manifest_version": 3,
   "name": "BoD's Bookmark Tool",
   "version": "1.5.0",
   "description": "BoD's Bookmark Tool",
@@ -13,15 +13,15 @@
     "bookmarks",
     "alarms",
     "storage",
+    "offscreen"
+  ],
+  "host_permissions": [
     "*://*/"
   ],
   "background": {
-    "scripts": [
-      "bbt.js"
-    ],
-    "persistent": true
+    "service_worker": "bbt.js"
   },
-  "browser_action": {
+  "action": {
     "default_title": "BoD's Bookmark Tool",
     "default_popup": "popup.html"
   },

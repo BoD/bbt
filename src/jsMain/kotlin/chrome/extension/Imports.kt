@@ -27,6 +27,4 @@
 
 package chrome.extension
 
-import org.w3c.dom.Window
-
-external fun getBackgroundPage(): Window
+//external fun getBackgroundPage(): Window

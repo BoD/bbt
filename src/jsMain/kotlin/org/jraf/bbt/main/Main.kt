@@ -27,76 +27,103 @@
 
 package org.jraf.bbt.main
 
+import chrome.action.BadgeBackgroundColor
+import chrome.action.BadgeText
+import chrome.action.setBadgeBackgroundColor
+import chrome.action.setBadgeText
 import chrome.alarms.AlarmCreateInfo
 import chrome.bookmarks.BookmarkTreeNode
-import chrome.browserAction.BadgeBackgroundColor
-import chrome.browserAction.BadgeText
-import kotlinx.browser.window
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.jraf.bbt.VERSION
 import org.jraf.bbt.model.BookmarkItem
 import org.jraf.bbt.model.BookmarksDocument
-import org.jraf.bbt.model.SyncState
 import org.jraf.bbt.model.isBookmark
 import org.jraf.bbt.model.sanitize
 import org.jraf.bbt.popup.isInPopup
 import org.jraf.bbt.popup.onPopupOpen
 import org.jraf.bbt.settings.loadSettingsFromStorage
-import org.jraf.bbt.util.CachedPublisher
 import org.jraf.bbt.util.FetchException
+import org.jraf.bbt.util.LogLevel
+import org.jraf.bbt.util.LogMessage
+import org.jraf.bbt.util.Message
+import org.jraf.bbt.util.MessageType
 import org.jraf.bbt.util.createBookmark
 import org.jraf.bbt.util.decodeURIComponent
 import org.jraf.bbt.util.emptyFolder
 import org.jraf.bbt.util.fetchText
 import org.jraf.bbt.util.findFolder
-import org.jraf.bbt.util.invoke
+import org.jraf.bbt.util.log
 import org.jraf.bbt.util.logd
 import org.jraf.bbt.util.logi
-import org.w3c.dom.MessageEvent
-import org.w3c.dom.events.Event
+import org.jraf.bbt.util.logw
 
 const val EXTENSION_NAME = "BoD's Bookmark Tool"
 
 private const val SYNC_PERIOD_MINUTES = 30
 private const val ALARM_NAME = EXTENSION_NAME
 
-private val backgroundPage = chrome.extension.getBackgroundPage()
+//private val backgroundPage = chrome.extension.getBackgroundPage()
+//
+//val syncStatePublisher: CachedPublisher<SyncState> by backgroundPage {
+//  CachedPublisher(SyncState.initialState())
+//}
 
-val syncStatePublisher: CachedPublisher<SyncState> by backgroundPage {
-  CachedPublisher(SyncState.initialState())
-}
-
-// Note: this is executed when the extension starts, and
-// also every time popup.html is opened.
+// Note: this is executed once when the extension starts, and also every time popup.html is opened.
 fun main() {
+  console.log("main()")
   if (isInPopup()) {
     onPopupOpen()
   } else {
     logi("$EXTENSION_NAME $VERSION")
+    registerMessageListener()
+  }
+}
 
-    window.addEventListener("message", ::onMessage)
+private fun registerMessageListener() {
+  chrome.runtime.onMessage.addListener { msg, sender, sendResponse ->
+    val message = msg.unsafeCast<Message>()
+    when (message.type) {
+      MessageType.LOG.ordinal -> {
+        val logMessage = message.data.unsafeCast<LogMessage>()
+        log(
+          level = LogLevel.entries.first { it.ordinal == logMessage.level },
+          format = "From Popup - " + logMessage.format,
+          *logMessage.params
+        )
+      }
 
-    chrome.alarms.onAlarm.addListener {
-      logd("Alarm triggered")
-      GlobalScope.launch {
-        syncFolders()
+      MessageType.SETTINGS_CHANGED.ordinal -> {
+        GlobalScope.launch {
+          onSettingsChanged()
+        }
       }
     }
-    GlobalScope.launch {
-      onSettingsChanged()
-    }
+//    sendResponse(Unit)
   }
 }
 
-private fun onMessage(event: Event) {
-  event as MessageEvent
-  logd("onMessage data=${event.data}")
-  GlobalScope.launch {
-    onSettingsChanged()
-  }
-}
+//    window.addEventListener("message", ::onMessage)
+//
+//    chrome.alarms.onAlarm.addListener {
+//      logd("Alarm triggered")
+//      GlobalScope.launch {
+//        syncFolders()
+//      }
+//    }
+//    GlobalScope.launch {
+//      onSettingsChanged()
+//    }
+
+
+//private fun onMessage(event: Event) {
+//  event as MessageEvent
+//  logd("onMessage data=${event.data}")
+//  GlobalScope.launch {
+//    onSettingsChanged()
+//  }
+//}
 
 private suspend fun onSettingsChanged() {
   val settings = loadSettingsFromStorage()
@@ -104,10 +131,10 @@ private suspend fun onSettingsChanged() {
     logd("Sync enabled, scheduled every $SYNC_PERIOD_MINUTES minutes")
     updateBadge(true)
     startScheduling()
-    // Launch the sync in another coroutine to not make this fun blocking too long
-    GlobalScope.launch {
+//    // Launch the sync in another coroutine to not make this fun blocking too long
+//    GlobalScope.launch {
       syncFolders()
-    }
+//    }
   } else {
     logd("Sync disabled")
     updateBadge(false)
@@ -117,10 +144,10 @@ private suspend fun onSettingsChanged() {
 
 private fun updateBadge(enabled: Boolean) {
   if (enabled) {
-    chrome.browserAction.setBadgeText(BadgeText(""))
+    setBadgeText(BadgeText(""))
   } else {
-    chrome.browserAction.setBadgeText(BadgeText("OFF"))
-    chrome.browserAction.setBadgeBackgroundColor(BadgeBackgroundColor("#808080"))
+    setBadgeText(BadgeText("OFF"))
+    setBadgeBackgroundColor(BadgeBackgroundColor("#808080"))
   }
 }
 
@@ -134,20 +161,20 @@ private fun stopScheduling() {
 
 private suspend fun syncFolders() {
   logd("Start syncing...")
-  publishSyncState { asStartSyncing() }
+//  publishSyncState { asStartSyncing() }
   val settings = loadSettingsFromStorage()
   for (syncItem in settings.syncItems) {
-    publishSyncState { asSyncing(folderName = syncItem.folderName) }
+//    publishSyncState { asSyncing(folderName = syncItem.folderName) }
     try {
       syncFolder(syncItem.folderName, syncItem.remoteBookmarksUrl)
       logd("Finished sync of '${syncItem.folderName}' successfully")
-      publishSyncState { asSuccess(folderName = syncItem.folderName) }
+//      publishSyncState { asSuccess(folderName = syncItem.folderName) }
     } catch (e: Exception) {
-      logd("Finished sync of '${syncItem.folderName}' with error")
-      publishSyncState { asError(folderName = syncItem.folderName, cause = e) }
+      logw("Finished sync of '${syncItem.folderName}' with error: %O", e.stackTraceToString())
+//      publishSyncState { asError(folderName = syncItem.folderName, cause = e) }
     }
   }
-  publishSyncState { asFinishSyncing() }
+//  publishSyncState { asFinishSyncing() }
   logd("Sync finished")
   logd("")
 }
@@ -170,19 +197,19 @@ private suspend fun fetchRemoteBookmarks(remoteBookmarksUrl: String): BookmarksD
   logd("Fetching bookmarks from remote $remoteBookmarksUrl")
   return try {
     val fetchedText = fetchText(remoteBookmarksUrl)
-    BookmarksDocument.parseJson(fetchedText)
-      ?: run {
-        logd("Could not parse fetched text as JSON, trying RSS/Atom")
+//    BookmarksDocument.parseJson(fetchedText)
+//      ?: run {
+//        logd("Could not parse fetched text as JSON, trying RSS/Atom")
         BookmarksDocument.parseRssOrAtom(fetchedText)
-      }
-      ?: run {
-        logd("Could not parse fetched text as RSS/Atom, trying HTML")
-        BookmarksDocument.parseHtml(
-          text = fetchedText,
-          elementXPath = remoteBookmarksUrl.extractElementXPathFragment(),
-          documentUrl = remoteBookmarksUrl
-        )
-      }
+//      }
+//      ?: run {
+//        logd("Could not parse fetched text as RSS/Atom, trying HTML")
+//        BookmarksDocument.parseHtml(
+//          text = fetchedText,
+//          elementXPath = remoteBookmarksUrl.extractElementXPathFragment(),
+//          documentUrl = remoteBookmarksUrl
+//        )
+//      }
       ?: run {
         logd("Could not parse fetched text as HTML, give up")
         throw RuntimeException("Fetched object doesn't seem to be either valid `bookmarks` JSON format document, RSS/Atom feed, or HTML")
@@ -204,9 +231,9 @@ private suspend fun populateFolder(folder: BookmarkTreeNode, bookmarkItems: Arra
   }
 }
 
-private fun publishSyncState(syncState: SyncState.() -> SyncState) {
-  syncStatePublisher.publish(syncStatePublisher.value!!.syncState())
-}
+//private fun publishSyncState(syncState: SyncState.() -> SyncState) {
+//  syncStatePublisher.publish(syncStatePublisher.value!!.syncState())
+//}
 
 private fun String.extractElementXPathFragment(): String? {
   return this.substringAfterLast("#__element=", "").ifBlank { null }?.let { decodeURIComponent(it) }
