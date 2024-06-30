@@ -37,15 +37,3 @@ kotlin {
     }
   }
 }
-
-//tasks.register<Zip>("dist") {
-//  dependsOn("jsBrowserDistribution")
-//  from(layout.buildDirectory.dir("dist/js/productionExecutable"))
-//  include("*", "*/*")
-//  exclude("*.zip")
-//  destinationDirectory.set(layout.buildDirectory.dir("dist/js/productionExecutable"))
-//}
-
-// Run `./gradlew refreshVersions` to update dependencies
-// Run `./gradlew jsBrowserDevelopmentExecutableDistribution` for tests (result is in build/dist/js/developmentExecutable)
-// Run `./gradlew dist` to release (result is in build/js/packages/bbt/kotlin/bbt-x.y.z.zip)

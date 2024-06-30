@@ -6,17 +6,6 @@ plugins {
 group = "org.jraf"
 version = "1.5.0"
 
-//tasks.register<Zip>("devDist") {
-//  subprojects.forEach {
-//    dependsOn("${it.name}:jsBrowserDevelopmentExecutableDistribution")
-//    from(it.layout.buildDirectory.dir("dist/js/productionExecutable"))
-//  }
-//  include("*", "*/*")
-//  exclude("*.zip")
-//  destinationDirectory.set(layout.buildDirectory.dir("devDist"))
-//}
-
-
 tasks.register<Sync>("devDist") {
   listOf(":serviceworker", ":popup", ":offscreen")
     .map {
@@ -30,7 +19,20 @@ tasks.register<Sync>("devDist") {
   into(layout.buildDirectory.dir("devDist"))
 }
 
+tasks.register<Zip>("dist") {
+  listOf(":serviceworker", ":popup", ":offscreen")
+    .map {
+      project(it)
+    }
+    .forEach {
+      dependsOn("${it.name}:jsBrowserDistribution")
+      from(it.layout.buildDirectory.dir("dist/js/productionExecutable"))
+
+    }
+  destinationDirectory.set(layout.buildDirectory.dir("dist"))
+}
+
 
 // Run `./gradlew refreshVersions` to update dependencies
-// Run `./gradlew jsBrowserDevelopmentExecutableDistribution` for tests (result is in build/dist/js/developmentExecutable)
-// Run `./gradlew dist` to release (result is in build/js/packages/bbt/kotlin/bbt-x.y.z.zip)
+// Run `./gradlew devDist` for tests (result is in build/devDist)
+// Run `./gradlew dist` to release (result is in build/dist/bbt-x.y.z.zip)
