@@ -23,9 +23,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.jraf.bbt.core.util
+package org.jraf.bbt.serviceworker.util
 
-// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/decodeURIComponent
-external fun decodeURIComponent(encodedURI: String): String
+import org.w3c.dom.url.URL
 
-fun String.equalsIgnoreCase(otherString: String) = uppercase() == otherString.uppercase()
+fun isValidUrl(url: String): Boolean {
+  try {
+    URL(url)
+  } catch (t: Throwable) {
+    return false
+  }
+  return true
+}

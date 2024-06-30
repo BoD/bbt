@@ -1,7 +1,5 @@
 plugins {
   kotlin("multiplatform").apply(false)
-
-  // TODO enable and use when https://youtrack.jetbrains.com/issue/KT-68904 is fixed
   kotlin("plugin.js-plain-objects").apply(false)
 }
 
@@ -20,7 +18,7 @@ version = "1.5.0"
 
 
 tasks.register<Sync>("devDist") {
-  listOf(":core", ":offscreen")
+  listOf(":serviceworker", ":offscreen")
     .map {
       project(it)
     }

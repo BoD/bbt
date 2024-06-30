@@ -25,7 +25,7 @@
 
 @file:OptIn(DelicateCoroutinesApi::class)
 
-package org.jraf.bbt.core.main
+package org.jraf.bbt.serviceworker.main
 
 import chrome.action.BadgeBackgroundColor
 import chrome.action.BadgeText
@@ -37,20 +37,20 @@ import chrome.bookmarks.BookmarkTreeNode
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import org.jraf.bbt.core.VERSION
-import org.jraf.bbt.core.model.parseFeed
-import org.jraf.bbt.core.model.parseHtml
-import org.jraf.bbt.core.model.parseJson
-import org.jraf.bbt.core.popup.isInPopup
-import org.jraf.bbt.core.popup.onPopupOpen
-import org.jraf.bbt.core.settings.loadSettingsFromStorage
-import org.jraf.bbt.core.util.FetchException
-import org.jraf.bbt.core.util.createBookmark
-import org.jraf.bbt.core.util.decodeURIComponent
-import org.jraf.bbt.core.util.emptyFolder
-import org.jraf.bbt.core.util.fetchText
-import org.jraf.bbt.core.util.findFolder
-import org.jraf.bbt.core.util.transitiveMessage
+import org.jraf.bbt.serviceworker.model.parseFeed
+import org.jraf.bbt.serviceworker.model.parseHtml
+import org.jraf.bbt.serviceworker.model.parseJson
+import org.jraf.bbt.serviceworker.popup.isInPopup
+import org.jraf.bbt.serviceworker.popup.onPopupOpen
+import org.jraf.bbt.serviceworker.settings.loadSettingsFromStorage
+import org.jraf.bbt.serviceworker.util.FetchException
+import org.jraf.bbt.serviceworker.util.createBookmark
+import org.jraf.bbt.serviceworker.util.decodeURIComponent
+import org.jraf.bbt.serviceworker.util.emptyFolder
+import org.jraf.bbt.serviceworker.util.fetchText
+import org.jraf.bbt.serviceworker.util.findFolder
+import org.jraf.bbt.serviceworker.util.transitiveMessage
+import org.jraf.bbt.shared.VERSION
 import org.jraf.bbt.shared.logging.LogLevel
 import org.jraf.bbt.shared.logging.initLogs
 import org.jraf.bbt.shared.logging.log

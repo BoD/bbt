@@ -23,7 +23,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.jraf.bbt.core.util
+package org.jraf.bbt.serviceworker.util
 
 import chrome.bookmarks.BookmarkTreeNode
 import chrome.bookmarks.CreateDetails

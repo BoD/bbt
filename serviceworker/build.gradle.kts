@@ -1,28 +1,10 @@
 plugins {
   kotlin("multiplatform")
-
-  // TODO enable and use when https://youtrack.jetbrains.com/issue/KT-68904 is fixed
   kotlin("plugin.js-plain-objects")
 }
 
 repositories {
   mavenCentral()
-}
-
-// Generate a Version.kt file with a constant for the version name
-tasks.register("generateVersionKt") {
-  val outputDir = layout.buildDirectory.dir("generated/source/kotlin").get().asFile
-  outputs.dir(outputDir)
-  doFirst {
-    val outputWithPackageDir = File(outputDir, "org/jraf/bbt/core").apply { mkdirs() }
-    File(outputWithPackageDir, "Version.kt").writeText(
-      """
-        package org.jraf.bbt.core
-  
-        const val VERSION = "v${rootProject.version}"
-      """.trimIndent()
-    )
-  }
 }
 
 // Replace the version in the manifest with the version defined in gradle
@@ -49,8 +31,6 @@ kotlin {
   sourceSets {
 
     val commonMain by getting {
-      kotlin.srcDir(tasks.getByName("generateVersionKt").outputs.files)
-
       dependencies {
         implementation(project(":shared"))
       }

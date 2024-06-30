@@ -23,15 +23,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.jraf.bbt.core.util
+package org.jraf.bbt.serviceworker.util
 
-import org.w3c.dom.url.URL
-
-fun isValidUrl(url: String): Boolean {
-  try {
-    URL(url)
-  } catch (t: Throwable) {
-    return false
+val Throwable.transitiveMessage: String
+  get() {
+    val cause = cause
+    return (message ?: "") + if (cause != null) "\nCaused by: ${cause.transitiveMessage}" else ""
   }
-  return true
-}

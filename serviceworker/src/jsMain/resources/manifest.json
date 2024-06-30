@@ -19,7 +19,7 @@
     "*://*/"
   ],
   "background": {
-    "service_worker": "core.js"
+    "service_worker": "serviceworker.js"
   },
   "action": {
     "default_title": "BoD's Bookmark Tool",

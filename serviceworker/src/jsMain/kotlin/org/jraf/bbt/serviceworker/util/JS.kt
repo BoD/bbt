@@ -23,7 +23,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.jraf.bbt.core.util
+package org.jraf.bbt.serviceworker.util
 
 @Suppress("NOTHING_TO_INLINE")
 inline fun <T> jsObject(noinline init: T.() -> Unit): T = (js("{}") as T).apply(init)

@@ -23,7 +23,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.jraf.bbt.core.model
+package org.jraf.bbt.serviceworker.model
 
 import chrome.offscreen.CreateParameters
 import chrome.offscreen.createDocument

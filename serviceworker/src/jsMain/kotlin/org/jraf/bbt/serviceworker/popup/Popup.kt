@@ -25,21 +25,21 @@
 
 @file:OptIn(DelicateCoroutinesApi::class)
 
-package org.jraf.bbt.core.popup
+package org.jraf.bbt.serviceworker.popup
 
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import org.jraf.bbt.VERSION
-import org.jraf.bbt.core.main.EXTENSION_NAME
-import org.jraf.bbt.core.settings.SyncItem
-import org.jraf.bbt.core.settings.loadSettingsFromStorage
-import org.jraf.bbt.core.settings.saveSettingsToStorage
-import org.jraf.bbt.core.util.equalsIgnoreCase
-import org.jraf.bbt.core.util.isExistingFolder
-import org.jraf.bbt.core.util.isValidUrl
+import org.jraf.bbt.serviceworker.main.EXTENSION_NAME
+import org.jraf.bbt.serviceworker.settings.SyncItem
+import org.jraf.bbt.serviceworker.settings.loadSettingsFromStorage
+import org.jraf.bbt.serviceworker.settings.saveSettingsToStorage
+import org.jraf.bbt.serviceworker.util.equalsIgnoreCase
+import org.jraf.bbt.serviceworker.util.isExistingFolder
+import org.jraf.bbt.serviceworker.util.isValidUrl
+import org.jraf.bbt.shared.VERSION
 import org.jraf.bbt.shared.logging.logd
 import org.jraf.bbt.shared.messaging.Message
 import org.jraf.bbt.shared.messaging.MessageType
@@ -239,7 +239,6 @@ private suspend fun isAlreadySyncedFolder(folderName: String): Boolean {
 }
 
 private val onSyncStateChanged: (SyncState) -> Unit = { syncState ->
-  logd("syncState=$syncState")
   val tdLastSync = document.getElementById("tdLastSync")!!
   if (syncState.isSyncing) {
     tdLastSync.innerHTML = "Sync ongoing…"

@@ -23,10 +23,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.jraf.bbt.core.util
+package org.jraf.bbt.serviceworker.util
 
-val Throwable.transitiveMessage: String
-  get() {
-    val cause = cause
-    return (message ?: "") + if (cause != null) "\nCaused by: ${cause.transitiveMessage}" else ""
-  }
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/decodeURIComponent
+external fun decodeURIComponent(encodedURI: String): String
+
+fun String.equalsIgnoreCase(otherString: String) = uppercase() == otherString.uppercase()
