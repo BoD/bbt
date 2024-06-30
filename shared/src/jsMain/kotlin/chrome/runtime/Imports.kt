@@ -33,6 +33,7 @@ external val onMessage: OnMessage
 
 external interface OnMessage {
   fun addListener(callback: (message: Any, sender: Any, sendResponse: (Any?) -> Unit) -> Unit)
+  fun removeListener(callback: (message: Any, sender: Any, sendResponse: (Any?) -> Unit) -> Unit)
 }
 
 external fun sendMessage(message: Any): Promise<Any?>

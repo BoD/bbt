@@ -32,6 +32,7 @@ import chrome.action.BadgeText
 import chrome.action.setBadgeBackgroundColor
 import chrome.action.setBadgeText
 import chrome.alarms.AlarmCreateInfo
+import chrome.alarms.onAlarm
 import chrome.bookmarks.BookmarkTreeNode
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
@@ -69,6 +70,7 @@ import org.jraf.bbt.shared.syncstate.SyncState
 const val EXTENSION_NAME = "BoD's Bookmark Tool"
 
 private const val SYNC_PERIOD_MINUTES = 30
+
 private const val ALARM_NAME = EXTENSION_NAME
 
 private var _syncState = SyncState.initialState()
@@ -82,6 +84,10 @@ fun main() {
     initLogs(logWithMessages = false, sourceName = "Core")
     logi("$EXTENSION_NAME $VERSION")
     registerMessageListener()
+    registerAlarmListener()
+    GlobalScope.launch {
+      onSettingsChanged()
+    }
   }
 }
 
@@ -104,30 +110,22 @@ private fun registerMessageListener() {
           onSettingsChanged()
         }
       }
+
+      MessageType.GET_SYNC_STATE.ordinal -> {
+        sendSyncStateChangedMessage(_syncState)
+      }
     }
   }
 }
 
-//    window.addEventListener("message", ::onMessage)
-//
-//    chrome.alarms.onAlarm.addListener {
-//      logd("Alarm triggered")
-//      GlobalScope.launch {
-//        syncFolders()
-//      }
-//    }
-//    GlobalScope.launch {
-//      onSettingsChanged()
-//    }
-
-
-//private fun onMessage(event: Event) {
-//  event as MessageEvent
-//  logd("onMessage data=${event.data}")
-//  GlobalScope.launch {
-//    onSettingsChanged()
-//  }
-//}
+private fun registerAlarmListener() {
+  onAlarm.addListener {
+    logd("Alarm triggered")
+    GlobalScope.launch {
+      syncFolders()
+    }
+  }
+}
 
 private suspend fun onSettingsChanged() {
   val settings = loadSettingsFromStorage()
@@ -135,10 +133,10 @@ private suspend fun onSettingsChanged() {
     logd("Sync enabled, scheduled every $SYNC_PERIOD_MINUTES minutes")
     updateBadge(true)
     startScheduling()
-//    // Launch the sync in another coroutine to not make this fun blocking too long
-//    GlobalScope.launch {
-    syncFolders()
-//    }
+    // Launch the sync in another coroutine to not make this fun blocking too long
+    GlobalScope.launch {
+      syncFolders()
+    }
   } else {
     logd("Sync disabled")
     updateBadge(false)

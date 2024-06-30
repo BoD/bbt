@@ -27,8 +27,8 @@
 
 package org.jraf.bbt.core.popup
 
-//import org.jraf.bbt.main.syncStatePublisher
 import kotlinx.browser.document
+import kotlinx.browser.window
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -44,6 +44,7 @@ import org.jraf.bbt.shared.logging.logd
 import org.jraf.bbt.shared.messaging.Message
 import org.jraf.bbt.shared.messaging.MessageType
 import org.jraf.bbt.shared.messaging.SyncStateChangedPayload
+import org.jraf.bbt.shared.messaging.sendGetSyncStateMessage
 import org.jraf.bbt.shared.messaging.sendSettingsChangedMessage
 import org.jraf.bbt.shared.messaging.toSyncState
 import org.jraf.bbt.shared.syncstate.FolderSyncState
@@ -61,16 +62,16 @@ fun isInPopup(): Boolean = jsTypeOf(document) != "undefined"
 fun onPopupOpen() {
   logd("Popup open")
   document.getElementById("nameAndVersion")!!.innerHTML = "$EXTENSION_NAME $VERSION"
+  observeSyncState()
+  sendGetSyncStateMessage()
   GlobalScope.launch {
-    observeSyncState()
     populateTable()
   }
 }
 
 private fun observeSyncState() {
-  chrome.runtime.onMessage.addListener { msg, sender, sendResponse ->
+  val callback: (message: Any, sender: Any, sendResponse: (Any?) -> Unit) -> Unit = { msg, sender, sendResponse ->
     val message = msg.unsafeCast<Message>()
-    logd("Received message: %O", message)
     when (message.type) {
       MessageType.SYNC_STATE_CHANGED.ordinal -> {
         val syncStateChangedPayload = message.payload.unsafeCast<SyncStateChangedPayload>()
@@ -78,8 +79,9 @@ private fun observeSyncState() {
       }
     }
   }
+  chrome.runtime.onMessage.addListener(callback)
+  window.onblur = { chrome.runtime.onMessage.removeListener(callback) }
 }
-
 
 private suspend fun populateTable() {
   val settings = loadSettingsFromStorage()

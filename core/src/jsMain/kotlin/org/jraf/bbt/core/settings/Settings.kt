@@ -28,7 +28,6 @@
 package org.jraf.bbt.core.settings
 
 import kotlinx.coroutines.await
-import org.jraf.bbt.shared.logging.logd
 
 data class Settings(
   val syncEnabled: Boolean,
@@ -82,7 +81,6 @@ private fun JsonSettings.toSettings() = Settings(
 suspend fun loadSettingsFromStorage(): Settings {
   val items = chrome.storage.sync.get("settings").await()
   val obj = items.settings
-  logd("Load settings from storage: %O", obj)
   return if (obj == undefined) {
     Settings(
       syncEnabled = true,
@@ -100,7 +98,6 @@ suspend fun loadSettingsFromStorage(): Settings {
 }
 
 suspend fun saveSettingsToStorage(settings: Settings) {
-  logd("Save settings to storage: %O", settings)
   val obj = js("{}")
   obj.settings = settings.toJsonSettings()
   chrome.storage.sync.set(obj).await()

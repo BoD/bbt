@@ -48,6 +48,7 @@ enum class MessageType {
   OFFSCREEN_PARSE_FEED,
   OFFSCREEN_PARSE_HTML,
   SYNC_STATE_CHANGED,
+  GET_SYNC_STATE,
 }
 
 fun sendMessage(message: Message): Promise<Any?> = chrome.runtime.sendMessage(message)
@@ -158,4 +159,9 @@ fun JsonSyncState.toSyncState(): SyncState {
       jsonFolderSyncState.folderName to folderSyncState
     }.toMap()
   )
+}
+
+fun sendGetSyncStateMessage() {
+  val message = Message(type = MessageType.GET_SYNC_STATE.ordinal, payload = null)
+  sendMessage(message)
 }
