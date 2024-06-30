@@ -1,5 +1,6 @@
 plugins {
   kotlin("multiplatform")
+  kotlin("plugin.js-plain-objects")
 }
 
 repositories {

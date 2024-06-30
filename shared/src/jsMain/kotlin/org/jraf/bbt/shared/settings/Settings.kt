@@ -25,7 +25,7 @@
 
 @file:OptIn(ExperimentalJsExport::class)
 
-package org.jraf.bbt.serviceworker.settings
+package org.jraf.bbt.shared.settings
 
 import kotlinx.coroutines.await
 

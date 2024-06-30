@@ -23,7 +23,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.jraf.bbt.serviceworker.util
+package org.jraf.bbt.shared
 
-@Suppress("NOTHING_TO_INLINE")
-inline fun <T> jsObject(noinline init: T.() -> Unit): T = (js("{}") as T).apply(init)
+const val EXTENSION_NAME = "BoD's Bookmark Tool"

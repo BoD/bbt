@@ -37,20 +37,16 @@ import chrome.bookmarks.BookmarkTreeNode
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import org.jraf.bbt.serviceworker.fetch.FetchException
+import org.jraf.bbt.serviceworker.fetch.fetchText
 import org.jraf.bbt.serviceworker.model.parseFeed
 import org.jraf.bbt.serviceworker.model.parseHtml
 import org.jraf.bbt.serviceworker.model.parseJson
-import org.jraf.bbt.serviceworker.popup.isInPopup
-import org.jraf.bbt.serviceworker.popup.onPopupOpen
-import org.jraf.bbt.serviceworker.settings.loadSettingsFromStorage
-import org.jraf.bbt.serviceworker.util.FetchException
-import org.jraf.bbt.serviceworker.util.createBookmark
-import org.jraf.bbt.serviceworker.util.decodeURIComponent
-import org.jraf.bbt.serviceworker.util.emptyFolder
-import org.jraf.bbt.serviceworker.util.fetchText
-import org.jraf.bbt.serviceworker.util.findFolder
-import org.jraf.bbt.serviceworker.util.transitiveMessage
+import org.jraf.bbt.shared.EXTENSION_NAME
 import org.jraf.bbt.shared.VERSION
+import org.jraf.bbt.shared.bookmarks.createBookmark
+import org.jraf.bbt.shared.bookmarks.emptyFolder
+import org.jraf.bbt.shared.bookmarks.findFolder
 import org.jraf.bbt.shared.logging.LogLevel
 import org.jraf.bbt.shared.logging.initLogs
 import org.jraf.bbt.shared.logging.log
@@ -65,9 +61,10 @@ import org.jraf.bbt.shared.remote.model.BookmarkItem
 import org.jraf.bbt.shared.remote.model.BookmarksDocument
 import org.jraf.bbt.shared.remote.model.isBookmark
 import org.jraf.bbt.shared.remote.model.sanitize
+import org.jraf.bbt.shared.settings.loadSettingsFromStorage
 import org.jraf.bbt.shared.syncstate.SyncState
-
-const val EXTENSION_NAME = "BoD's Bookmark Tool"
+import org.jraf.bbt.shared.util.decodeURIComponent
+import org.jraf.bbt.shared.util.transitiveMessage
 
 private const val SYNC_PERIOD_MINUTES = 30
 
@@ -75,19 +72,14 @@ private const val ALARM_NAME = EXTENSION_NAME
 
 private var _syncState = SyncState.initialState()
 
-// Note: this is executed once when the extension starts, and also every time popup.html is opened.
+// This is executed once when the extension starts
 fun main() {
-  if (isInPopup()) {
-    initLogs(logWithMessages = true, sourceName = "Popup")
-    onPopupOpen()
-  } else {
-    initLogs(logWithMessages = false, sourceName = "Core")
-    logi("$EXTENSION_NAME $VERSION")
-    registerMessageListener()
-    registerAlarmListener()
-    GlobalScope.launch {
-      onSettingsChanged()
-    }
+  initLogs(logWithMessages = false, sourceName = "Core")
+  logi("$EXTENSION_NAME $VERSION")
+  registerMessageListener()
+  registerAlarmListener()
+  GlobalScope.launch {
+    onSettingsChanged()
   }
 }
 

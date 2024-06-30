@@ -25,21 +25,17 @@
 
 @file:OptIn(DelicateCoroutinesApi::class)
 
-package org.jraf.bbt.serviceworker.popup
+package org.jraf.bbt.popup
 
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import org.jraf.bbt.serviceworker.main.EXTENSION_NAME
-import org.jraf.bbt.serviceworker.settings.SyncItem
-import org.jraf.bbt.serviceworker.settings.loadSettingsFromStorage
-import org.jraf.bbt.serviceworker.settings.saveSettingsToStorage
-import org.jraf.bbt.serviceworker.util.equalsIgnoreCase
-import org.jraf.bbt.serviceworker.util.isExistingFolder
-import org.jraf.bbt.serviceworker.util.isValidUrl
+import org.jraf.bbt.shared.EXTENSION_NAME
 import org.jraf.bbt.shared.VERSION
+import org.jraf.bbt.shared.bookmarks.isExistingFolder
+import org.jraf.bbt.shared.logging.initLogs
 import org.jraf.bbt.shared.logging.logd
 import org.jraf.bbt.shared.messaging.Message
 import org.jraf.bbt.shared.messaging.MessageType
@@ -47,19 +43,21 @@ import org.jraf.bbt.shared.messaging.SyncStateChangedPayload
 import org.jraf.bbt.shared.messaging.sendGetSyncStateMessage
 import org.jraf.bbt.shared.messaging.sendSettingsChangedMessage
 import org.jraf.bbt.shared.messaging.toSyncState
+import org.jraf.bbt.shared.settings.SyncItem
+import org.jraf.bbt.shared.settings.loadSettingsFromStorage
+import org.jraf.bbt.shared.settings.saveSettingsToStorage
 import org.jraf.bbt.shared.syncstate.FolderSyncState
 import org.jraf.bbt.shared.syncstate.SyncState
+import org.jraf.bbt.shared.util.equalsIgnoreCase
+import org.jraf.bbt.shared.util.isValidUrl
 import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLImageElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.events.Event
 
-/**
- * We don't have a document in the service worker, but only in the popup.
- */
-fun isInPopup(): Boolean = jsTypeOf(document) != "undefined"
-
-fun onPopupOpen() {
+// This is executed every time popup.html is opened.
+fun main() {
+  initLogs(logWithMessages = true, sourceName = "Popup")
   logd("Popup open")
   document.getElementById("nameAndVersion")!!.innerHTML = "$EXTENSION_NAME $VERSION"
   observeSyncState()
@@ -70,7 +68,7 @@ fun onPopupOpen() {
 }
 
 private fun observeSyncState() {
-  val callback: (message: Any, sender: Any, sendResponse: (Any?) -> Unit) -> Unit = { msg, sender, sendResponse ->
+  val callback: (message: Any, sender: Any, sendResponse: (Any?) -> Unit) -> Unit = { msg, _, _ ->
     val message = msg.unsafeCast<Message>()
     when (message.type) {
       MessageType.SYNC_STATE_CHANGED.ordinal -> {
@@ -260,8 +258,7 @@ private val onSyncStateChanged: (SyncState) -> Unit = { syncState ->
     for (syncItem in settings.syncItems) {
       val folderName = syncItem.folderName
       val imgSyncState = document.getElementById("imgSyncState_$folderName") as HTMLImageElement
-      val folderSyncState = syncState.folderSyncStates[folderName]
-      when (folderSyncState) {
+      when (val folderSyncState = syncState.folderSyncStates[folderName]) {
         null -> {
           imgSyncState.src = "icons/empty.png"
           imgSyncState.title = ""

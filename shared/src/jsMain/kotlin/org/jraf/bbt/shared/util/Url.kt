@@ -25,6 +25,17 @@
 
 package org.jraf.bbt.shared.util
 
+import org.w3c.dom.url.URL
+
+fun isValidUrl(url: String): Boolean {
+  try {
+    URL(url)
+  } catch (t: Throwable) {
+    return false
+  }
+  return true
+}
+
 /**
  * Make this URL relative to the given [documentUrl].
  */

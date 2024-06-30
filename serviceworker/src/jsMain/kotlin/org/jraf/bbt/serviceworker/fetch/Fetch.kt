@@ -23,7 +23,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.jraf.bbt.serviceworker.util
+package org.jraf.bbt.serviceworker.fetch
 
 import kotlinx.coroutines.await
 import kotlinx.coroutines.withTimeout

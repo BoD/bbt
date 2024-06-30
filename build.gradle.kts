@@ -18,7 +18,7 @@ version = "1.5.0"
 
 
 tasks.register<Sync>("devDist") {
-  listOf(":serviceworker", ":offscreen")
+  listOf(":serviceworker", ":popup", ":offscreen")
     .map {
       project(it)
     }

@@ -23,12 +23,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.jraf.bbt.serviceworker.util
+package org.jraf.bbt.shared.bookmarks
 
 import chrome.bookmarks.BookmarkTreeNode
 import chrome.bookmarks.CreateDetails
 import chrome.bookmarks.SearchQuery
 import org.jraf.bbt.shared.logging.logd
+import org.jraf.bbt.shared.util.equalsIgnoreCase
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 

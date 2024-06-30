@@ -7,6 +7,7 @@ rootProject.name = "bbt"
 
 include(
   "shared",
+  "popup",
   "offscreen",
   "serviceworker",
 )

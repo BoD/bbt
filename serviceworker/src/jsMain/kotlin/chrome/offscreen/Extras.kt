@@ -27,8 +27,6 @@ package chrome.offscreen
 
 import kotlinx.js.JsPlainObject
 
-// Note: this needs to be in a separate file because of https://youtrack.jetbrains.com/issue/KT-68904
-
 @JsPlainObject
 external interface CreateParameters {
   val justification: String
