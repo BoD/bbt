@@ -7,7 +7,7 @@
  *                              /___/
  * repository.
  *
- * Copyright (C) 2020-present Benoit 'BoD' Lubek (BoD@JRAF.org)
+ * Copyright (C) 2024-present Benoit 'BoD' Lubek (BoD@JRAF.org)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,13 +27,9 @@
 
 package org.jraf.bbt.shared.messaging
 
-import kotlinx.coroutines.await
-import org.jraf.bbt.shared.logging.LogLevel
-import org.jraf.bbt.shared.remote.model.BookmarksDocument
 import org.jraf.bbt.shared.syncstate.FolderSyncState
 import org.jraf.bbt.shared.syncstate.SyncState
 import kotlin.js.Date
-import kotlin.js.Promise
 
 // Need @JsExport because these will be jsonified / dejsonified
 @JsExport
@@ -45,13 +41,12 @@ class Message(
 enum class MessageType {
   LOG,
   SETTINGS_CHANGED,
-  OFFSCREEN_PARSE_FEED,
-  OFFSCREEN_PARSE_HTML,
+  OFFSCREEN_EXTRACT_BOOKMARKS_FROM_FEED,
+  OFFSCREEN_EXTRACT_BOOKMARKS_FROM_HTML,
   SYNC_STATE_CHANGED,
   GET_SYNC_STATE,
 }
 
-fun sendMessage(message: Message): Promise<Any?> = chrome.runtime.sendMessage(message)
 
 @JsExport
 class LogPayload(
@@ -61,54 +56,17 @@ class LogPayload(
   val params: Array<out Any?>,
 )
 
-fun sendLogMessage(source: String, level: LogLevel, format: String, params: Array<out Any?>) {
-  val logPayload = LogPayload(
-    source = source,
-    level = level.ordinal,
-    format = format,
-    params = params,
-  )
-  val message = Message(type = MessageType.LOG.ordinal, payload = logPayload)
-  sendMessage(message)
-}
-
-fun sendSettingsChangedMessage() {
-  val message = Message(type = MessageType.SETTINGS_CHANGED.ordinal, payload = null)
-  sendMessage(message)
-}
-
 @JsExport
-class OffscreenParseFeedPayload(
+class OffscreenExtractBookmarksFromFeedPayload(
   val body: String,
 )
 
-suspend fun sendOffscreenParseFeedMessage(body: String): BookmarksDocument? {
-  val message = Message(type = MessageType.OFFSCREEN_PARSE_FEED.ordinal, payload = OffscreenParseFeedPayload(body))
-  return sendMessage(message).await().unsafeCast<BookmarksDocument?>()
-}
-
 @JsExport
-class OffscreenParseHtmlPayload(
+class OffscreenExtractBookmarksFromHtmlPayload(
   val body: String,
   val elementXPath: String?,
   val documentUrl: String,
 )
-
-suspend fun sendOffscreenParseHtmlMessage(
-  body: String,
-  elementXPath: String?,
-  documentUrl: String,
-): BookmarksDocument? {
-  val message = Message(
-    type = MessageType.OFFSCREEN_PARSE_HTML.ordinal,
-    payload = OffscreenParseHtmlPayload(
-      body = body,
-      elementXPath = elementXPath,
-      documentUrl = documentUrl,
-    )
-  )
-  return sendMessage(message).await().unsafeCast<BookmarksDocument?>()
-}
 
 @JsExport
 class SyncStateChangedPayload(
@@ -128,12 +86,7 @@ class JsonFolderSyncState(
   val errorMessage: String?,
 )
 
-fun sendSyncStateChangedMessage(syncState: SyncState) {
-  val message = Message(type = MessageType.SYNC_STATE_CHANGED.ordinal, payload = SyncStateChangedPayload(syncState.toJsonSyncState()))
-  sendMessage(message)
-}
-
-private fun SyncState.toJsonSyncState(): JsonSyncState {
+internal fun SyncState.toJsonSyncState(): JsonSyncState {
   return JsonSyncState(
     lastSync = lastSync?.toISOString(),
     folderSyncStates = folderSyncStates.mapValues { (folderName, folderSyncState) ->
@@ -159,9 +112,4 @@ fun JsonSyncState.toSyncState(): SyncState {
       jsonFolderSyncState.folderName to folderSyncState
     }.toMap()
   )
-}
-
-fun sendGetSyncStateMessage() {
-  val message = Message(type = MessageType.GET_SYNC_STATE.ordinal, payload = null)
-  sendMessage(message)
 }

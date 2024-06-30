@@ -23,40 +23,44 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-@file:OptIn(ExperimentalJsExport::class)
-
 package org.jraf.bbt.shared.settings
 
 import kotlinx.coroutines.await
+import org.jraf.bbt.shared.settings.model.JsonSettings
+import org.jraf.bbt.shared.settings.model.JsonSyncItem
+import org.jraf.bbt.shared.settings.model.Settings
+import org.jraf.bbt.shared.settings.model.SyncItem
 
-data class Settings(
-  val syncEnabled: Boolean,
-  val syncItems: List<SyncItem>,
-)
+class SettingsManager private constructor() {
+  suspend fun loadSettingsFromStorage(): Settings {
+    val items = chrome.storage.sync.get("settings").await()
+    val obj = items.settings
+    return if (obj == undefined) {
+      Settings(
+        syncEnabled = true,
+        syncItems = listOf(
+          SyncItem(
+            folderName = "Sample",
+            remoteBookmarksUrl = "https://en.wikipedia.org/wiki/Wikipedia:Featured_articles#__element=//h3[@data-mw-thread-id='h-Elements-Chemistry_and_mineralogy']/following-sibling::*[1]"
+          )
+        )
+      )
+    } else {
+      val jsonSettings = obj.unsafeCast<JsonSettings>()
+      jsonSettings.toSettings()
+    }
+  }
 
-data class SyncItem(
-  val folderName: String,
-  val remoteBookmarksUrl: String,
-)
+  suspend fun saveSettingsToStorage(settings: Settings) {
+    val obj = js("{}")
+    obj.settings = settings.toJsonSettings()
+    chrome.storage.sync.set(obj).await()
+  }
 
-/**
- * Version of [Settings] that is safe to store to / load from Chrome storage.
- */
-@JsExport
-class JsonSettings(
-  val syncEnabled: Boolean,
-  val syncItems: Array<JsonSyncItem>,
-)
-
-/**
- * Version of [SyncItem] that is safe to store to / load from Chrome storage.
- */
-@JsExport
-class JsonSyncItem(
-  val folderName: String,
-  val remoteBookmarksUrl: String,
-)
-
+  companion object {
+    val settingsManager = SettingsManager()
+  }
+}
 
 private fun Settings.toJsonSettings() = JsonSettings(
   syncEnabled = syncEnabled,
@@ -77,28 +81,3 @@ private fun JsonSettings.toSettings() = Settings(
     )
   }
 )
-
-suspend fun loadSettingsFromStorage(): Settings {
-  val items = chrome.storage.sync.get("settings").await()
-  val obj = items.settings
-  return if (obj == undefined) {
-    Settings(
-      syncEnabled = true,
-      syncItems = listOf(
-        SyncItem(
-          folderName = "Sample",
-          remoteBookmarksUrl = "https://en.wikipedia.org/wiki/Wikipedia:Featured_articles#__element=//h3[@data-mw-thread-id='h-Elements-Chemistry_and_mineralogy']/following-sibling::*[1]"
-        )
-      )
-    )
-  } else {
-    val jsonSettings = obj.unsafeCast<JsonSettings>()
-    jsonSettings.toSettings()
-  }
-}
-
-suspend fun saveSettingsToStorage(settings: Settings) {
-  val obj = js("{}")
-  obj.settings = settings.toJsonSettings()
-  chrome.storage.sync.set(obj).await()
-}

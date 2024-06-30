@@ -34,18 +34,16 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.jraf.bbt.shared.EXTENSION_NAME
 import org.jraf.bbt.shared.VERSION
-import org.jraf.bbt.shared.bookmarks.isExistingFolder
+import org.jraf.bbt.shared.bookmarks.BookmarkManager.Companion.bookmarkManager
 import org.jraf.bbt.shared.logging.initLogs
 import org.jraf.bbt.shared.logging.logd
 import org.jraf.bbt.shared.messaging.Message
 import org.jraf.bbt.shared.messaging.MessageType
+import org.jraf.bbt.shared.messaging.Messenger.Companion.messenger
 import org.jraf.bbt.shared.messaging.SyncStateChangedPayload
-import org.jraf.bbt.shared.messaging.sendGetSyncStateMessage
-import org.jraf.bbt.shared.messaging.sendSettingsChangedMessage
 import org.jraf.bbt.shared.messaging.toSyncState
-import org.jraf.bbt.shared.settings.SyncItem
-import org.jraf.bbt.shared.settings.loadSettingsFromStorage
-import org.jraf.bbt.shared.settings.saveSettingsToStorage
+import org.jraf.bbt.shared.settings.SettingsManager.Companion.settingsManager
+import org.jraf.bbt.shared.settings.model.SyncItem
 import org.jraf.bbt.shared.syncstate.FolderSyncState
 import org.jraf.bbt.shared.syncstate.SyncState
 import org.jraf.bbt.shared.util.equalsIgnoreCase
@@ -61,7 +59,7 @@ fun main() {
   logd("Popup open")
   document.getElementById("nameAndVersion")!!.innerHTML = "$EXTENSION_NAME $VERSION"
   observeSyncState()
-  sendGetSyncStateMessage()
+  messenger.sendGetSyncStateMessage()
   GlobalScope.launch {
     populateTable()
   }
@@ -82,7 +80,7 @@ private fun observeSyncState() {
 }
 
 private suspend fun populateTable() {
-  val settings = loadSettingsFromStorage()
+  val settings = settingsManager.loadSettingsFromStorage()
 
   // Enabled checkbox
   val syncEnabledCheckboxCheckedHtml = if (settings.syncEnabled) "checked" else ""
@@ -165,23 +163,23 @@ private fun onSyncEnabledChange(event: Event) {
 }
 
 private fun updateSyncEnabled(syncEnabled: Boolean) = GlobalScope.launch {
-  val settings = loadSettingsFromStorage()
-  saveSettingsToStorage(settings.copy(syncEnabled = syncEnabled))
+  val settings = settingsManager.loadSettingsFromStorage()
+  settingsManager.saveSettingsToStorage(settings.copy(syncEnabled = syncEnabled))
 
   updateSyncEnabledText(syncEnabled)
-  sendSettingsChangedMessage()
+  messenger.sendSettingsChangedMessage()
 }
 
 private fun onRemoveClick(event: Event) {
   val folderName = (event.target as HTMLButtonElement).value
   logd("onRemoveClick folderName=$folderName")
   GlobalScope.launch {
-    val settings = loadSettingsFromStorage()
+    val settings = settingsManager.loadSettingsFromStorage()
     val settingsToSave = settings.copy(syncItems = settings.syncItems.filterNot { it.folderName == folderName })
-    saveSettingsToStorage(settingsToSave)
+    settingsManager.saveSettingsToStorage(settingsToSave)
 
     populateTable()
-    sendSettingsChangedMessage()
+    messenger.sendSettingsChangedMessage()
   }
 }
 
@@ -190,13 +188,13 @@ private fun onAddClick(@Suppress("UNUSED_PARAMETER") event: Event) {
   val url = (document.getElementById("inputUrl") as HTMLInputElement).value
   logd("onAddClick folderName=$folderName url=$url")
   GlobalScope.launch {
-    val settings = loadSettingsFromStorage()
+    val settings = settingsManager.loadSettingsFromStorage()
     val syncItemsToSave = settings.syncItems + SyncItem(folderName, url)
     val settingsToSave = settings.copy(syncItems = syncItemsToSave)
-    saveSettingsToStorage(settingsToSave)
+    settingsManager.saveSettingsToStorage(settingsToSave)
 
     populateTable()
-    sendSettingsChangedMessage()
+    messenger.sendSettingsChangedMessage()
   }
 }
 
@@ -207,7 +205,7 @@ private fun onAddItemInputChange(@Suppress("UNUSED_PARAMETER") event: Event) {
 
   GlobalScope.launch {
     // Folder
-    val isExistingFolder = isExistingFolder(folderName)
+    val isExistingFolder = bookmarkManager.isExistingFolder(folderName)
     val isAlreadySyncedFolder = isAlreadySyncedFolder(folderName)
     val tdFolderNameError = document.getElementById("tdFolderNameError")!!
     tdFolderNameError.innerHTML = when {
@@ -232,7 +230,7 @@ private fun onAddItemInputChange(@Suppress("UNUSED_PARAMETER") event: Event) {
 }
 
 private suspend fun isAlreadySyncedFolder(folderName: String): Boolean {
-  val settings = loadSettingsFromStorage()
+  val settings = settingsManager.loadSettingsFromStorage()
   return settings.syncItems.any { it.folderName.equalsIgnoreCase(folderName) }
 }
 
@@ -254,7 +252,7 @@ private val onSyncStateChanged: (SyncState) -> Unit = { syncState ->
   }
 
   GlobalScope.launch {
-    val settings = loadSettingsFromStorage()
+    val settings = settingsManager.loadSettingsFromStorage()
     for (syncItem in settings.syncItems) {
       val folderName = syncItem.folderName
       val imgSyncState = document.getElementById("imgSyncState_$folderName") as HTMLImageElement

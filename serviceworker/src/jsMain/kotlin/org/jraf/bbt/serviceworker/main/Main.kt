@@ -33,44 +33,26 @@ import chrome.action.setBadgeBackgroundColor
 import chrome.action.setBadgeText
 import chrome.alarms.AlarmCreateInfo
 import chrome.alarms.onAlarm
-import chrome.bookmarks.BookmarkTreeNode
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import org.jraf.bbt.serviceworker.fetch.FetchException
-import org.jraf.bbt.serviceworker.fetch.fetchText
-import org.jraf.bbt.serviceworker.model.parseFeed
-import org.jraf.bbt.serviceworker.model.parseHtml
-import org.jraf.bbt.serviceworker.model.parseJson
 import org.jraf.bbt.shared.EXTENSION_NAME
 import org.jraf.bbt.shared.VERSION
-import org.jraf.bbt.shared.bookmarks.createBookmark
-import org.jraf.bbt.shared.bookmarks.emptyFolder
-import org.jraf.bbt.shared.bookmarks.findFolder
 import org.jraf.bbt.shared.logging.LogLevel
 import org.jraf.bbt.shared.logging.initLogs
 import org.jraf.bbt.shared.logging.log
 import org.jraf.bbt.shared.logging.logd
 import org.jraf.bbt.shared.logging.logi
-import org.jraf.bbt.shared.logging.logw
 import org.jraf.bbt.shared.messaging.LogPayload
 import org.jraf.bbt.shared.messaging.Message
 import org.jraf.bbt.shared.messaging.MessageType
-import org.jraf.bbt.shared.messaging.sendSyncStateChangedMessage
-import org.jraf.bbt.shared.remote.model.BookmarkItem
-import org.jraf.bbt.shared.remote.model.BookmarksDocument
-import org.jraf.bbt.shared.remote.model.isBookmark
-import org.jraf.bbt.shared.remote.model.sanitize
-import org.jraf.bbt.shared.settings.loadSettingsFromStorage
-import org.jraf.bbt.shared.syncstate.SyncState
-import org.jraf.bbt.shared.util.decodeURIComponent
-import org.jraf.bbt.shared.util.transitiveMessage
+import org.jraf.bbt.shared.settings.SettingsManager.Companion.settingsManager
 
 private const val SYNC_PERIOD_MINUTES = 30
 
 private const val ALARM_NAME = EXTENSION_NAME
 
-private var _syncState = SyncState.initialState()
+private val syncManager = SyncManager()
 
 // This is executed once when the extension starts
 fun main() {
@@ -104,7 +86,7 @@ private fun registerMessageListener() {
       }
 
       MessageType.GET_SYNC_STATE.ordinal -> {
-        sendSyncStateChangedMessage(_syncState)
+        syncManager.sendSyncState()
       }
     }
   }
@@ -114,20 +96,20 @@ private fun registerAlarmListener() {
   onAlarm.addListener {
     logd("Alarm triggered")
     GlobalScope.launch {
-      syncFolders()
+      syncManager.syncFolders()
     }
   }
 }
 
 private suspend fun onSettingsChanged() {
-  val settings = loadSettingsFromStorage()
+  val settings = settingsManager.loadSettingsFromStorage()
   if (settings.syncEnabled) {
     logd("Sync enabled, scheduled every $SYNC_PERIOD_MINUTES minutes")
     updateBadge(true)
     startScheduling()
     // Launch the sync in another coroutine to not make this fun blocking too long
     GlobalScope.launch {
-      syncFolders()
+      syncManager.syncFolders()
     }
   } else {
     logd("Sync disabled")
@@ -153,83 +135,3 @@ private fun stopScheduling() {
   chrome.alarms.clearAll()
 }
 
-private suspend fun syncFolders() {
-  logd("Start syncing...")
-  publishSyncState { asStartSyncing() }
-  val settings = loadSettingsFromStorage()
-  for (syncItem in settings.syncItems) {
-    publishSyncState { asSyncing(folderName = syncItem.folderName) }
-    try {
-      syncFolder(syncItem.folderName, syncItem.remoteBookmarksUrl)
-      logd("Finished sync of '${syncItem.folderName}' successfully")
-      publishSyncState { asSuccess(folderName = syncItem.folderName) }
-    } catch (e: Exception) {
-      logw("Finished sync of '${syncItem.folderName}' with error: %O", e.stackTraceToString())
-      publishSyncState { asError(folderName = syncItem.folderName, message = e.transitiveMessage) }
-    }
-  }
-  publishSyncState { asFinishSyncing() }
-  logd("Sync finished")
-  logd("")
-}
-
-private suspend fun syncFolder(folderName: String, remoteBookmarksUrl: String) {
-  logd("Syncing '$folderName' to $remoteBookmarksUrl")
-  val folder = findFolder(folderName) ?: throw RuntimeException("Could not find folder '$folderName'")
-  val bookmarksDocument = try {
-    fetchRemoteBookmarks(remoteBookmarksUrl)
-  } catch (e: Exception) {
-    throw RuntimeException("Could not fetch remote bookmarks from $remoteBookmarksUrl for folder '$folderName'", e)
-  }
-  val bookmarkItems = bookmarksDocument.bookmarks
-  emptyFolder(folder)
-  logd("Populating folder ${folder.title}")
-  populateFolder(folder, bookmarkItems)
-}
-
-private suspend fun fetchRemoteBookmarks(remoteBookmarksUrl: String): BookmarksDocument {
-  logd("Fetching bookmarks from remote $remoteBookmarksUrl")
-  return try {
-    val body = fetchText(remoteBookmarksUrl)
-    parseJson(body)
-      ?: run {
-        logd("Could not parse fetched text as JSON, trying RSS/Atom")
-        parseFeed(body)
-      }
-      ?: run {
-        logd("Could not parse fetched text as RSS/Atom, trying HTML")
-        parseHtml(
-          body = body,
-          elementXPath = remoteBookmarksUrl.extractElementXPathFragment(),
-          documentUrl = remoteBookmarksUrl
-        )
-      }
-      ?: run {
-        logd("Could not parse fetched text as HTML, give up")
-        throw RuntimeException("Fetched object doesn't seem to be either valid `bookmarks` JSON format document, RSS/Atom feed, or HTML")
-      }
-  } catch (e: FetchException) {
-    throw RuntimeException("Could not fetch from remote $remoteBookmarksUrl", e)
-  }.sanitize()
-}
-
-private suspend fun populateFolder(folder: BookmarkTreeNode, bookmarkItems: Array<BookmarkItem>) {
-  for (bookmarkItem in bookmarkItems) {
-    if (bookmarkItem.isBookmark()) {
-      createBookmark(parentId = folder.id, title = bookmarkItem.title, url = bookmarkItem.url)
-    } else {
-      val createdFolder = createBookmark(parentId = folder.id, title = bookmarkItem.title)
-      // Recurse
-      populateFolder(createdFolder, bookmarkItem.bookmarks!!)
-    }
-  }
-}
-
-private fun publishSyncState(transform: SyncState.() -> SyncState) {
-  _syncState = transform(_syncState)
-  sendSyncStateChangedMessage(_syncState)
-}
-
-private fun String.extractElementXPathFragment(): String? {
-  return this.substringAfterLast("#__element=", "").ifBlank { null }?.let { decodeURIComponent(it) }
-}

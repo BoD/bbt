@@ -25,14 +25,15 @@
 
 package org.jraf.bbt.offscreen
 
-import org.jraf.bbt.offscreen.domparser.parseFeed
-import org.jraf.bbt.offscreen.domparser.parseHtml
+import org.jraf.bbt.offscreen.domparser.DomParserBookmarkExtractor
 import org.jraf.bbt.shared.logging.initLogs
 import org.jraf.bbt.shared.logging.logd
 import org.jraf.bbt.shared.messaging.Message
 import org.jraf.bbt.shared.messaging.MessageType
-import org.jraf.bbt.shared.messaging.OffscreenParseFeedPayload
-import org.jraf.bbt.shared.messaging.OffscreenParseHtmlPayload
+import org.jraf.bbt.shared.messaging.OffscreenExtractBookmarksFromFeedPayload
+import org.jraf.bbt.shared.messaging.OffscreenExtractBookmarksFromHtmlPayload
+
+private val domParserBookmarkExtractor = DomParserBookmarkExtractor()
 
 fun main() {
   initLogs(logWithMessages = true, sourceName = "Offscreen")
@@ -40,15 +41,15 @@ fun main() {
   chrome.runtime.onMessage.addListener { msg, sender, sendResponse ->
     val message = msg.unsafeCast<Message>()
     when (message.type) {
-      MessageType.OFFSCREEN_PARSE_FEED.ordinal -> {
-        val logMessage = message.payload.unsafeCast<OffscreenParseFeedPayload>()
-        sendResponse(parseFeed(logMessage.body))
+      MessageType.OFFSCREEN_EXTRACT_BOOKMARKS_FROM_FEED.ordinal -> {
+        val logMessage = message.payload.unsafeCast<OffscreenExtractBookmarksFromFeedPayload>()
+        sendResponse(domParserBookmarkExtractor.extractBookmarksFromFeed(logMessage.body))
       }
 
-      MessageType.OFFSCREEN_PARSE_HTML.ordinal -> {
-        val logMessage = message.payload.unsafeCast<OffscreenParseHtmlPayload>()
+      MessageType.OFFSCREEN_EXTRACT_BOOKMARKS_FROM_HTML.ordinal -> {
+        val logMessage = message.payload.unsafeCast<OffscreenExtractBookmarksFromHtmlPayload>()
         sendResponse(
-          parseHtml(
+          domParserBookmarkExtractor.extractBookmarksFromHtml(
             body = logMessage.body,
             elementXPath = logMessage.elementXPath,
             documentUrl = logMessage.documentUrl,

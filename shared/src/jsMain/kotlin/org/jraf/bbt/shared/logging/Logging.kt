@@ -25,7 +25,7 @@
 
 package org.jraf.bbt.shared.logging
 
-import org.jraf.bbt.shared.messaging.sendLogMessage
+import org.jraf.bbt.shared.messaging.Messenger.Companion.messenger
 import kotlin.js.Date
 
 enum class LogLevel {
@@ -50,7 +50,7 @@ fun log(
 ) {
   if (_logWithMessages) {
     // Send the log to the service worker console
-    sendLogMessage(
+    messenger.sendLogMessage(
       source = _sourceName,
       level = level,
       format = format,
