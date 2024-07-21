@@ -27,10 +27,5 @@
   "action": {
     "default_title": "BoD's Bookmark Tool",
     "default_popup": "popup.html"
-  },
-  "applications": {
-    "gecko": {
-      "id": "bbt@jraf.org"
-    }
   }
 }
