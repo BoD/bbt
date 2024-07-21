@@ -1,1 +1,0 @@
-config.devtool= 'cheap-module-source-map';

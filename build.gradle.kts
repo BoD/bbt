@@ -1,74 +1,46 @@
-import org.jetbrains.kotlin.gradle.tasks.Kotlin2JsCompile
-
 plugins {
-    kotlin("js")
+  kotlin("multiplatform").apply(false)
+  kotlin("plugin.js-plain-objects").apply(false)
+  id("org.jetbrains.compose").apply(false)
+  kotlin("plugin.compose").apply(false)
 }
 
 group = "org.jraf"
-version = "1.4.0"
+version = "1.5.0"
 
-repositories {
-    mavenCentral()
-}
-
-// Generate a Version.kt file with a constant for the version name
-tasks.register("generateVersionKt") {
-    val outputDir = layout.buildDirectory.dir("generated/source/kotlin").get().asFile
-    outputs.dir(outputDir)
-    doFirst {
-        val outputWithPackageDir = File(outputDir, "org/jraf/bbt").apply { mkdirs() }
-        File(outputWithPackageDir, "Version.kt").writeText(
-            """
-                package org.jraf.bbt
-
-                const val VERSION = "v${project.version}"
-            """.trimIndent()
-        )
+tasks.register<Sync>("devDist") {
+  listOf(
+    ":serviceworker",
+    ":popup",
+    ":offscreen",
+  )
+    .map {
+      project(it)
     }
-}
-
-// Replace the version in the manifest with the version defined in gradle
-tasks.register("replaceVersionInManifest") {
-    val manifestFile = layout.projectDirectory.dir("src/main/resources/manifest.json").asFile
-    outputs.file(manifestFile)
-    doFirst {
-        var contents = manifestFile.readText()
-        contents = contents.replace(Regex(""""version": "(.*)""""), """"version": "${project.version}"""")
-        manifestFile.writeText(contents)
+    .forEach {
+      dependsOn("${it.name}:jsBrowserDevelopmentExecutableDistribution")
+      from(it.layout.buildDirectory.dir("dist/js/developmentExecutable"))
     }
-}
-// Make browserDevelopmentWebpack and browserProductionWebpack depend on it
-project.afterEvaluate {
-    tasks.getByName("browserDevelopmentWebpack").dependsOn("replaceVersionInManifest")
-    tasks.getByName("browserProductionWebpack").dependsOn("replaceVersionInManifest")
-}
-
-
-tasks.withType<Kotlin2JsCompile>().all {
-    kotlinOptions.freeCompilerArgs += "-opt-in=kotlin.RequiresOptIn"
-    dependsOn("generateVersionKt")
-}
-
-dependencies {
-    implementation(KotlinX.coroutines.core)
-}
-
-kotlin {
-    js(IR) {
-        browser {
-            binaries.executable()
-        }
-    }
-    sourceSets["main"].kotlin.srcDir(tasks.getByName("generateVersionKt").outputs.files)
+  into(layout.buildDirectory.dir("devDist"))
 }
 
 tasks.register<Zip>("dist") {
-    dependsOn(":browserProductionWebpack")
-    from(layout.buildDirectory.dir("distributions"))
-    include("*", "*/*")
-    exclude("*.zip")
-    destinationDirectory.set(layout.buildDirectory.dir("distributions"))
+  listOf(
+    ":serviceworker",
+    ":popup",
+    ":offscreen",
+  )
+    .map {
+      project(it)
+    }
+    .forEach {
+      dependsOn("${it.name}:jsBrowserDistribution")
+      from(it.layout.buildDirectory.dir("dist/js/productionExecutable"))
+    }
+  destinationDirectory.set(layout.buildDirectory.dir("dist"))
 }
 
+
 // Run `./gradlew refreshVersions` to update dependencies
-// Run `./gradlew browserDevelopmentWebpack` for tests and `./gradlew dist` to release
+// Run `./gradlew devDist` for tests (result is in build/devDist)
+// Run `./gradlew dist` to release (result is in build/dist/bbt-x.y.z.zip)
