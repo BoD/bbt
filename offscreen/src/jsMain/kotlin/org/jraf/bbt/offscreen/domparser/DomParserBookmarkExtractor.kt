@@ -80,26 +80,27 @@ class DomParserBookmarkExtractor {
 
   /**
    * Extract bookmarks from a body that is an HTML document.
-   * If [elementXPath] is not null, only the element at this XPath will be considered.
+   * If [xPath] is not null, only the element at this XPath will be considered.
    */
   fun extractBookmarksFromHtml(
     body: String,
-    elementXPath: String?,
+    xPath: String?,
     documentUrl: String,
   ): BookmarksDocument? {
     return try {
       val document = DOMParser().parseFromString(body, "text/html")
-      val root = if (elementXPath != null) {
-        logd("Using XPath expression: $elementXPath")
+      val root = if (xPath != null) {
+        // TODO XPath should return a list of <A>s, instead of returning the root from where to extract the <A>s
+        logd("Using XPath expression: $xPath")
         val element = try {
-          val xPathResult = document.evaluate(elementXPath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null)
+          val xPathResult = document.evaluate(xPath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null)
           xPathResult.singleNodeValue as? Element
         } catch (t: Throwable) {
-          logw("Error evaluating XPath expression '$elementXPath': ${t.message} %O", t.stackTraceToString())
+          logw("Error evaluating XPath expression '$xPath': ${t.message} %O", t.stackTraceToString())
           return null
         }
         if (element == null) {
-          logw("Node at XPath expression '$elementXPath' not found or not an Element")
+          logw("Node at XPath expression '$xPath' not found or not an Element")
           return null
         } else {
           element

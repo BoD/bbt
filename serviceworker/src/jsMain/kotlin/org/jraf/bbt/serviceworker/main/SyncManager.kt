@@ -26,6 +26,7 @@
 package org.jraf.bbt.serviceworker.main
 
 import chrome.bookmarks.BookmarkTreeNode
+import kotlinx.coroutines.flow.first
 import org.jraf.bbt.serviceworker.extract.BookmarkExtractor
 import org.jraf.bbt.serviceworker.fetch.FetchException
 import org.jraf.bbt.serviceworker.fetch.fetchText
@@ -49,7 +50,7 @@ class SyncManager {
   suspend fun syncFolders() {
     logd("Start syncing...")
     publishSyncState { asStartSyncing() }
-    val settings = settingsManager.loadSettingsFromStorage()
+    val settings = settingsManager.settings.first()
     for (syncItem in settings.syncItems) {
       publishSyncState { asSyncing(folderName = syncItem.folderName) }
       try {
@@ -86,7 +87,7 @@ class SyncManager {
       val body = fetchText(remoteBookmarksUrl)
       bookmarkExtractor.extractBookmarks(
         body = body,
-        elementXPath = remoteBookmarksUrl.extractElementXPathFragment(),
+        xPath = remoteBookmarksUrl.extractXPathFragment(),
         documentUrl = remoteBookmarksUrl
       )
         ?: run {
@@ -114,8 +115,8 @@ class SyncManager {
     messenger.sendSyncStateChangedMessage(syncState)
   }
 
-  private fun String.extractElementXPathFragment(): String? {
-    return this.substringAfterLast("#__element=", "").ifBlank { null }?.let { decodeURIComponent(it) }
+  private fun String.extractXPathFragment(): String? {
+    return this.substringAfterLast("#__xpath=", "").ifBlank { null }?.let { decodeURIComponent(it) }
   }
 
   fun sendSyncState() {

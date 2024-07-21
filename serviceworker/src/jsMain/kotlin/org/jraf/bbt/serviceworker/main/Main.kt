@@ -47,6 +47,7 @@ import org.jraf.bbt.shared.messaging.LogPayload
 import org.jraf.bbt.shared.messaging.Message
 import org.jraf.bbt.shared.messaging.MessageType
 import org.jraf.bbt.shared.settings.SettingsManager.Companion.settingsManager
+import org.jraf.bbt.shared.settings.model.Settings
 
 private const val SYNC_PERIOD_MINUTES = 30
 
@@ -60,9 +61,7 @@ fun main() {
   logi("$EXTENSION_NAME $VERSION")
   registerMessageListener()
   registerAlarmListener()
-  GlobalScope.launch {
-    onSettingsChanged()
-  }
+  registerSettingsListener()
 }
 
 private fun registerMessageListener() {
@@ -77,12 +76,6 @@ private fun registerMessageListener() {
           format = logPayload.format,
           params = logPayload.params
         )
-      }
-
-      MessageType.SETTINGS_CHANGED.ordinal -> {
-        GlobalScope.launch {
-          onSettingsChanged()
-        }
       }
 
       MessageType.GET_SYNC_STATE.ordinal -> {
@@ -101,8 +94,16 @@ private fun registerAlarmListener() {
   }
 }
 
-private suspend fun onSettingsChanged() {
-  val settings = settingsManager.loadSettingsFromStorage()
+fun registerSettingsListener() {
+  GlobalScope.launch {
+    settingsManager.settings.collect { settings ->
+      onSettingsChanged(settings)
+    }
+  }
+}
+
+private suspend fun onSettingsChanged(settings: Settings) {
+  logd("Settings changed: $settings")
   if (settings.syncEnabled) {
     logd("Sync enabled, scheduled every $SYNC_PERIOD_MINUTES minutes")
     updateBadge(true)
