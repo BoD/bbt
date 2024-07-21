@@ -1,6 +1,6 @@
 # BoD's Bookmark Tool
 
-This small extension for Chrome and Firefox allows you to synchronize any bookmark folder with a remote document.
+This small extension for Chrome allows you to synchronize any bookmark folder with a remote document.
 
 Ideal to share a bunch of bookmarks with your team at work, or your loved ones!
 
@@ -9,7 +9,7 @@ Ideal to share a bunch of bookmarks with your team at work, or your loved ones!
 ## Setup
 
 - Chrome: [Chrome Web Store](https://chrome.google.com/webstore/detail/plhhpanklegnkjipjebhdbcfdjdhkpfb).
-- Firefox: [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/bod-s-bookmark-tool/).
+- Firefox: [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/bod-s-bookmark-tool/) (*).
 
 ## Supported remote document formats
 
@@ -61,6 +61,12 @@ The "bookmarks" JSON format looks like this:
 - You will need a version of the [JDK](https://en.wikipedia.org/wiki/Java_Development_Kit) on your system
 - After cloning this repository, issue this command: `./gradlew dist`
 - This will compile and package the plugin, and the resulting `bbt-<version>.zip` file will be in the `build/dist` folder
+
+##  * About the Firefox version
+
+As of now, the version for Firefox is no longer updated, as since Manifest v3, it is too hard to make
+a single extension that works on both Chrome and Firefox. The Firefox version is still available on the Firefox Add-ons site, but it is
+stuck at version 1.4.0.
 
 ## License
 
