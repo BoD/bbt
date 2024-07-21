@@ -1,9 +1,10 @@
 # Changelog
 
-## v1.5.0 - 2024-06-30
+## v1.5.0 - 2024-07-21
 
 - Handle HTML as a format in addition to RSS, Atom and Bookmarks Json format.
 - Migrate to the Manifest v3 format.
+- Migrate the UI to Compose.
 
 ## v1.4.0 - 2021-12-12
 

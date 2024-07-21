@@ -79,7 +79,7 @@ class SettingsManager private constructor() {
         syncItems = listOf(
           SyncItem(
             folderName = "Sample",
-            remoteBookmarksUrl = "https://en.wikipedia.org/wiki/Wikipedia:Featured_articles#__xpath=//h3[@data-mw-thread-id='h-Elements-Chemistry_and_mineralogy']/following-sibling::*[1]"
+            remoteBookmarksUrl = "https://en.wikipedia.org/wiki/List_of_James_Bond_films#__xpath=//table//th/i//a"
           )
         )
       )

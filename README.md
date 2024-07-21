@@ -1,17 +1,32 @@
 # BoD's Bookmark Tool
 
-This very small and simple extension for Chrome and Firefox allows you to synchronize any bookmark folder with a remote file.
+This small extension for Chrome and Firefox allows you to synchronize any bookmark folder with a remote document.
 
 Ideal to share a bunch of bookmarks with your team at work, or your loved ones!
+
+<img src="https://raw.githubusercontent.com/BoD/bbt/master/assets/Screenshot-firefox.png" alt="BoD's Bookmark Tool" width="504">
 
 ## Setup
 
 - Chrome: [Chrome Web Store](https://chrome.google.com/webstore/detail/plhhpanklegnkjipjebhdbcfdjdhkpfb).
 - Firefox: [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/bod-s-bookmark-tool/).
 
-## Remote file format
+## Supported remote document formats
 
-The remote file can either be RSS, Atom, or a proprietary "bookmarks" JSON format.
+The remote document can either be RSS, Atom, HTML, or a proprietary "bookmarks" JSON format.
+
+### RSS / Atom
+
+The `item` elements will be extracted from the feed, and the `title` and `link` elements / `href` attributes will be used to create the
+bookmarks.
+
+### HTML
+
+All `A` elements of the document will be extracted, unless an XPath expression is provided in the URL.
+To do so, append `#__xpath=<expression>` to the URL, for instance `https://example.com/bookmarks.html#__xpath=//div[@id='bookmarks']`.
+The XPath can either refer to a list of `A` elements, or a single container from which the embedded `A` elements will be extracted.
+
+### "bookmarks" JSON
 
 The "bookmarks" JSON format looks like this:
 
@@ -45,7 +60,7 @@ The "bookmarks" JSON format looks like this:
 - This is [Kotlin/JS project](https://kotlinlang.org/docs/reference/js-overview.html)
 - You will need a version of the [JDK](https://en.wikipedia.org/wiki/Java_Development_Kit) on your system
 - After cloning this repository, issue this command: `./gradlew dist`
-- This will compile and package the plugin, and the resulting `bbt-<version>.zip` file will be in the `build/distributions` folder
+- This will compile and package the plugin, and the resulting `bbt-<version>.zip` file will be in the `build/dist` folder
 
 ## License
 
