@@ -30,8 +30,10 @@ import org.jraf.bbt.shared.bookmarks.BookmarksDocument
 import org.jraf.bbt.shared.logging.logd
 import org.jraf.bbt.shared.logging.logw
 import org.jraf.bbt.shared.util.relativeTo
+import org.w3c.dom.Document
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLAnchorElement
+import org.w3c.dom.Node
 import org.w3c.dom.XMLDocument
 import org.w3c.dom.asList
 import org.w3c.dom.evaluate
@@ -80,42 +82,32 @@ class DomParserBookmarkExtractor {
 
   /**
    * Extract bookmarks from a body that is an HTML document.
-   * If [elementXPath] is not null, only the element at this XPath will be considered.
+   * If [xPath] is not null, only the element(s) at this XPath will be considered.
+   *
+   * The XPath expression can either point to a list of `A` elements, or to a single (non `A`) element in which case, a list of `A` elements will be searched in its children.
    */
   fun extractBookmarksFromHtml(
     body: String,
-    elementXPath: String?,
+    xPath: String?,
     documentUrl: String,
   ): BookmarksDocument? {
     return try {
       val document = DOMParser().parseFromString(body, "text/html")
-      val root = if (elementXPath != null) {
-        logd("Using XPath expression: $elementXPath")
-        val element = try {
-          val xPathResult = document.evaluate(elementXPath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null)
-          xPathResult.singleNodeValue as? Element
-        } catch (t: Throwable) {
-          logw("Error evaluating XPath expression '$elementXPath': ${t.message} %O", t.stackTraceToString())
-          return null
-        }
-        if (element == null) {
-          logw("Node at XPath expression '$elementXPath' not found or not an Element")
-          return null
-        } else {
-          element
-        }
+      val aElems: List<Element> = if (xPath != null) {
+        logd("Using XPath expression: $xPath")
+        document.getAElementsAtXPath(xPath) ?: return null
       } else {
-        document.body
-      } ?: run {
-        logw("No body found in the document")
-        return null
+        (document.body ?: run {
+          logw("No body found in the document")
+          return null
+        }).getElementsByTagName("a").asList()
       }
-      val aElems = root.getElementsByTagName("a").asList()
+
       logd("Found ${aElems.size} <a> elements")
       BookmarksDocument(
         bookmarks = aElems.mapNotNull { aElem ->
           aElem as HTMLAnchorElement
-          val title = aElem.textContent?.trim()?.ifBlank { null } ?: "Untitled"
+          val title = aElem.innerText.trim().ifBlank { "Untitled" }
           BookmarkItem(
             title = title,
             url = aElem.getAttribute("href")
@@ -130,5 +122,49 @@ class DomParserBookmarkExtractor {
       logw("Text can't be parsed as HTML: ${t.message} %O", t.stackTraceToString())
       null
     }
+  }
+
+  private fun Document.getAElementsAtXPath(xPath: String): List<HTMLAnchorElement>? {
+    return try {
+      val nodesAtXpath = getNodesAtXPath(xPath)
+      if (nodesAtXpath.size == 1) {
+        // Single element
+        val singleNode = nodesAtXpath[0]
+        if (singleNode is HTMLAnchorElement) {
+          // Single A
+          nodesAtXpath
+        } else {
+          // Single non-A
+          val singleElement = singleNode as? Element
+          if (singleElement == null) {
+            logw("Element at XPath is not an Element: $singleNode")
+            null
+          } else {
+            singleElement.getElementsByTagName("a").asList()
+          }
+        }
+      } else {
+        // Multiple elements
+        nodesAtXpath
+      }?.filterIsInstance<HTMLAnchorElement>()
+    } catch (t: Throwable) {
+      logw("Error evaluating XPath expression '$xPath': ${t.message} %O", t.stackTraceToString())
+      null
+    }
+  }
+
+  private fun Document.getNodesAtXPath(xPath: String): MutableList<Node> {
+    val xPathResult = evaluate(xPath, this, null, XPathResult.ANY_TYPE, null)
+    logd("XPath result type: ${xPathResult.resultType}")
+    val nodesAtXpath = mutableListOf<Node>()
+    var node: Node?
+    while (true) {
+      node = xPathResult.iterateNext()
+      if (node == null) {
+        break
+      }
+      nodesAtXpath.add(node)
+    }
+    return nodesAtXpath
   }
 }

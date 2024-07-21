@@ -64,7 +64,7 @@ class OffscreenExtractBookmarksFromFeedPayload(
 @JsExport
 class OffscreenExtractBookmarksFromHtmlPayload(
   val body: String,
-  val elementXPath: String?,
+  val xPath: String?,
   val documentUrl: String,
 )
 

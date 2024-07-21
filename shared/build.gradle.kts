@@ -26,15 +26,13 @@ tasks.register("generateVersionKt") {
 kotlin {
   js {
     browser()
-    binaries.executable()
   }
-  sourceSets {
-    val commonMain by getting {
-      kotlin.srcDir(tasks.getByName("generateVersionKt").outputs.files)
 
-      dependencies {
-        api(KotlinX.coroutines.core)
-      }
+  sourceSets.commonMain {
+    kotlin.srcDir(tasks.getByName("generateVersionKt").outputs.files)
+
+    dependencies {
+      api(KotlinX.coroutines.core)
     }
   }
 }

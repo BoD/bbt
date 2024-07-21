@@ -51,7 +51,7 @@ fun main() {
         sendResponse(
           domParserBookmarkExtractor.extractBookmarksFromHtml(
             body = logMessage.body,
-            elementXPath = logMessage.elementXPath,
+            xPath = logMessage.xPath,
             documentUrl = logMessage.documentUrl,
           )
         )

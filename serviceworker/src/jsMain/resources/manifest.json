@@ -21,13 +21,11 @@
   "background": {
     "service_worker": "serviceworker.js"
   },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
+  },
   "action": {
     "default_title": "BoD's Bookmark Tool",
     "default_popup": "popup.html"
-  },
-  "applications": {
-    "gecko": {
-      "id": "bbt@jraf.org"
-    }
   }
 }

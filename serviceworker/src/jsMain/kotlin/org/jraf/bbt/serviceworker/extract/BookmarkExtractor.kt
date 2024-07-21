@@ -36,7 +36,7 @@ import org.jraf.bbt.shared.logging.logw
 import org.jraf.bbt.shared.messaging.Messenger.Companion.messenger
 
 class BookmarkExtractor {
-  suspend fun extractBookmarks(body: String, elementXPath: String?, documentUrl: String): BookmarksDocument? {
+  suspend fun extractBookmarks(body: String, xPath: String?, documentUrl: String): BookmarksDocument? {
     var bookmarksDocument = extractBookmarksFromJson(body)
     if (bookmarksDocument != null) {
       return bookmarksDocument
@@ -51,7 +51,7 @@ class BookmarkExtractor {
     logd("Could not parse fetched text as RSS/Atom, trying HTML")
     bookmarksDocument = extractBookmarksFromHtml(
       body = body,
-      elementXPath = elementXPath,
+      xPath = xPath,
       documentUrl = documentUrl
     )
     if (bookmarksDocument != null) {
@@ -94,14 +94,14 @@ class BookmarkExtractor {
 
   /**
    * Extract bookmarks from a body that is an HTML document.
-   * If [elementXPath] is not null, only the element at this XPath will be considered.
+   * If [xPath] is not null, only the element at this XPath will be considered.
    *
    * The `DomParser` API is not available in the Service Worker context, so we offload this to an offscreen document.
    * Yes, this is convoluted :(. Thanks Chrome!
    */
-  suspend fun extractBookmarksFromHtml(body: String, elementXPath: String?, documentUrl: String): BookmarksDocument? {
+  suspend fun extractBookmarksFromHtml(body: String, xPath: String?, documentUrl: String): BookmarksDocument? {
     ensureOffscreenDocumentCreated()
-    return messenger.sendOffscreenExtractBookmarksFromHtmlMessage(body, elementXPath, documentUrl)
+    return messenger.sendOffscreenExtractBookmarksFromHtmlMessage(body, xPath, documentUrl)
   }
 
   private suspend fun ensureOffscreenDocumentCreated() {

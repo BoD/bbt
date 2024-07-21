@@ -59,14 +59,14 @@ class Messenger private constructor() {
 
   suspend fun sendOffscreenExtractBookmarksFromHtmlMessage(
     body: String,
-    elementXPath: String?,
+    xPath: String?,
     documentUrl: String,
   ): BookmarksDocument? {
     val message = Message(
       type = MessageType.OFFSCREEN_EXTRACT_BOOKMARKS_FROM_HTML.ordinal,
       payload = OffscreenExtractBookmarksFromHtmlPayload(
         body = body,
-        elementXPath = elementXPath,
+        xPath = xPath,
         documentUrl = documentUrl,
       )
     )

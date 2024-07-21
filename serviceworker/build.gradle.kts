@@ -3,10 +3,6 @@ plugins {
   kotlin("plugin.js-plain-objects")
 }
 
-repositories {
-  mavenCentral()
-}
-
 // Replace the version in the manifest with the version defined in gradle
 tasks.register("replaceVersionInManifest") {
   val manifestFile = layout.projectDirectory.dir("src/jsMain/resources/manifest.json").asFile
@@ -28,12 +24,9 @@ kotlin {
     browser()
     binaries.executable()
   }
-  sourceSets {
-
-    val commonMain by getting {
-      dependencies {
-        implementation(project(":shared"))
-      }
+  sourceSets.commonMain {
+    dependencies {
+      implementation(project(":shared"))
     }
   }
 }
