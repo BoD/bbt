@@ -46,6 +46,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -61,6 +62,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.dp
 import bbt.popup.generated.resources.Res
 import bbt.popup.generated.resources.check_24px
+import bbt.popup.generated.resources.delete_24px
 import bbt.popup.generated.resources.logo
 import bbt.popup.generated.resources.sync_24px
 import bbt.popup.generated.resources.warning_24px
@@ -163,6 +165,7 @@ private fun ColumnScope.SyncItemList(
         Row(
           verticalAlignment = Alignment.CenterVertically,
         ) {
+          // Folder name
           DenseOutlinedTextField(
             modifier = Modifier.width(192.dp),
             value = syncItem.folderName,
@@ -173,6 +176,7 @@ private fun ColumnScope.SyncItemList(
 
           Spacer(Modifier.width(8.dp))
 
+          // Remote bookmarks URL
           DenseOutlinedTextField(
             modifier = Modifier.width(320.dp),
             value = syncItem.remoteBookmarksUrl,
@@ -181,6 +185,9 @@ private fun ColumnScope.SyncItemList(
             onValueChange = { }
           )
 
+          Spacer(Modifier.width(8.dp))
+
+          // Sync indication
           Box(
             modifier = Modifier.width(40.dp),
             contentAlignment = Alignment.Center,
@@ -221,16 +228,18 @@ private fun ColumnScope.SyncItemList(
             }
           }
 
-          OutlinedButton(
-            modifier = Modifier
-              .height(48.dp)
-              .width(96.dp),
-            contentPadding = PaddingValues(0.dp),
+          Spacer(Modifier.width(8.dp))
+
+          // Remove button
+          IconButton(
             onClick = {
               onRemoveItem(syncItem)
-            }
+            },
           ) {
-            Text("Remove")
+            Icon(
+              painter = painterResource(Res.drawable.delete_24px),
+              contentDescription = "Remove",
+            )
           }
         }
       }
@@ -288,7 +297,7 @@ private fun AddItemRow(onAddItem: suspend (folderName: String, remoteBookmarksUr
       },
     )
 
-    Spacer(Modifier.width(40.dp))
+    Spacer(Modifier.width(8.dp))
 
     // Add button
     val coroutineScope = rememberCoroutineScope()
@@ -297,7 +306,7 @@ private fun AddItemRow(onAddItem: suspend (folderName: String, remoteBookmarksUr
     OutlinedButton(
       modifier = Modifier
         .height(48.dp)
-        .width(96.dp),
+        .width(88.dp),
       contentPadding = PaddingValues(0.dp),
       enabled = isAddButtonEnabled,
       onClick = {
