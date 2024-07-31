@@ -35,4 +35,5 @@ external val onAlarm: OnAlarm
 
 external interface OnAlarm {
   fun addListener(block: () -> Unit)
+  fun removeListener(block: () -> Unit)
 }

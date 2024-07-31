@@ -60,7 +60,6 @@ fun main() {
   initLogs(logWithMessages = false, sourceName = "Core")
   logi("$EXTENSION_NAME $VERSION")
   registerMessageListener()
-  registerAlarmListener()
   registerSettingsListener()
 }
 
@@ -77,20 +76,14 @@ private fun registerMessageListener() {
           params = logPayload.params
         )
       }
-
-      MessageType.GET_SYNC_STATE.ordinal -> {
-        syncManager.sendSyncState()
-      }
     }
   }
 }
 
-private fun registerAlarmListener() {
-  onAlarm.addListener {
-    logd("Alarm triggered")
-    GlobalScope.launch {
-      syncManager.syncFolders()
-    }
+private val onAlarmTriggered: () -> Unit = {
+  logd("Alarm triggered")
+  GlobalScope.launch {
+    syncManager.syncFolders()
   }
 }
 
@@ -102,20 +95,29 @@ fun registerSettingsListener() {
   }
 }
 
+private var syncWasDisabled = false
+
 private suspend fun onSettingsChanged(settings: Settings) {
   logd("Settings changed: $settings")
   if (settings.syncEnabled) {
     logd("Sync enabled, scheduled every $SYNC_PERIOD_MINUTES minutes")
     updateBadge(true)
+    stopScheduling()
     startScheduling()
-    // Launch the sync in another coroutine to not make this fun blocking too long
-    GlobalScope.launch {
-      syncManager.syncFolders()
+
+    // Going from disabled to enabled -> sync now
+    if (syncWasDisabled) {
+      // Launch the sync in another coroutine to not make this fun blocking too long
+      GlobalScope.launch {
+        syncManager.syncFolders()
+      }
     }
+    syncWasDisabled = false
   } else {
     logd("Sync disabled")
     updateBadge(false)
     stopScheduling()
+    syncWasDisabled = true
   }
 }
 
@@ -129,10 +131,17 @@ private fun updateBadge(enabled: Boolean) {
 }
 
 private fun startScheduling() {
-  chrome.alarms.create(ALARM_NAME, AlarmCreateInfo(periodInMinutes = SYNC_PERIOD_MINUTES))
+  onAlarm.addListener(onAlarmTriggered)
+  chrome.alarms.create(
+    ALARM_NAME,
+    AlarmCreateInfo(
+      periodInMinutes = SYNC_PERIOD_MINUTES,
+      delayInMinutes = SYNC_PERIOD_MINUTES,
+    ),
+  )
 }
 
 private fun stopScheduling() {
+  onAlarm.removeListener(onAlarmTriggered)
   chrome.alarms.clearAll()
 }
-

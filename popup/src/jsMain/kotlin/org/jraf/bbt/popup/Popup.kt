@@ -72,15 +72,14 @@ import org.jraf.bbt.popup.components.SwitchWithLabel
 import org.jraf.bbt.popup.theme.successColor
 import org.jraf.bbt.popup.theme.warningColor
 import org.jraf.bbt.shared.VERSION
+import org.jraf.bbt.shared.settings.model.FolderSyncState
 import org.jraf.bbt.shared.settings.model.Settings
 import org.jraf.bbt.shared.settings.model.SyncItem
-import org.jraf.bbt.shared.syncstate.FolderSyncState
-import org.jraf.bbt.shared.syncstate.SyncState
+import org.jraf.bbt.shared.settings.model.SyncState
 
 @Composable
 fun Popup(
   settings: Settings,
-  syncState: SyncState,
   onSyncEnabledCheckedChange: (Boolean) -> Unit,
   onAddItem: suspend (folderName: String, remoteBookmarksUrl: String) -> AddItemResult,
   onRemoveItem: (SyncItem) -> Unit,
@@ -99,7 +98,7 @@ fun Popup(
       Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(
           modifier = Modifier.alpha(.75F),
-          text = "BoD's Bookmark Tool $VERSION\n" + syncStatusText(syncState),
+          text = "BoD's Bookmark Tool $VERSION\n" + syncStatusText(syncState = settings.syncState),
           style = MaterialTheme.typography.labelSmall,
         )
 
@@ -117,7 +116,6 @@ fun Popup(
 
     SyncItemList(
       settings = settings,
-      syncState = syncState,
       onAddItem = onAddItem,
       onRemoveItem = onRemoveItem,
     )
@@ -125,7 +123,7 @@ fun Popup(
 }
 
 private fun syncStatusText(syncState: SyncState) = if (syncState.isSyncing) {
-  "Sync ongoing…"
+  "Sync ongoing..."
 } else {
   val lastSync = syncState.lastSync
   if (lastSync == null) {
@@ -142,7 +140,6 @@ private fun syncStatusText(syncState: SyncState) = if (syncState.isSyncing) {
 @Composable
 private fun ColumnScope.SyncItemList(
   settings: Settings,
-  syncState: SyncState,
   onAddItem: suspend (folderName: String, remoteBookmarksUrl: String) -> AddItemResult,
   onRemoveItem: (SyncItem) -> Unit,
 ) {
@@ -188,7 +185,7 @@ private fun ColumnScope.SyncItemList(
             modifier = Modifier.width(40.dp),
             contentAlignment = Alignment.Center,
           ) {
-            AnimatedContent(syncState.folderSyncStates[syncItem.folderName]) { folderSyncState ->
+            AnimatedContent(settings.syncState.folderSyncStates[syncItem.folderName]) { folderSyncState ->
               when (folderSyncState) {
                 FolderSyncState.Syncing -> {
                   Rotate {

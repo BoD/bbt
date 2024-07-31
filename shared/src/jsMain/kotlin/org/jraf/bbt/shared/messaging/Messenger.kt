@@ -29,12 +29,8 @@ package org.jraf.bbt.shared.messaging
 import kotlinx.coroutines.await
 import org.jraf.bbt.shared.bookmarks.BookmarksDocument
 import org.jraf.bbt.shared.logging.LogLevel
-import org.jraf.bbt.shared.syncstate.SyncState
-import kotlin.js.Promise
 
 class Messenger private constructor() {
-  private fun sendMessage(message: Message): Promise<Any?> = chrome.runtime.sendMessage(message)
-
   fun sendLogMessage(source: String, level: LogLevel, format: String, params: Array<out Any?>) {
     val logPayload = LogPayload(
       source = source,
@@ -71,16 +67,6 @@ class Messenger private constructor() {
       )
     )
     return chrome.runtime.sendMessage(message).await().unsafeCast<BookmarksDocument?>()
-  }
-
-  fun sendSyncStateChangedMessage(syncState: SyncState) {
-    val message = Message(type = MessageType.SYNC_STATE_CHANGED.ordinal, payload = SyncStateChangedPayload(syncState.toJsonSyncState()))
-    chrome.runtime.sendMessage(message)
-  }
-
-  fun sendGetSyncStateMessage() {
-    val message = Message(type = MessageType.GET_SYNC_STATE.ordinal, payload = null)
-    chrome.runtime.sendMessage(message)
   }
 
   companion object {

@@ -27,10 +27,6 @@
 
 package org.jraf.bbt.shared.messaging
 
-import org.jraf.bbt.shared.syncstate.FolderSyncState
-import org.jraf.bbt.shared.syncstate.SyncState
-import kotlin.js.Date
-
 // Need @JsExport because these will be jsonified / dejsonified
 @JsExport
 class Message(
@@ -43,8 +39,6 @@ enum class MessageType {
   SETTINGS_CHANGED,
   OFFSCREEN_EXTRACT_BOOKMARKS_FROM_FEED,
   OFFSCREEN_EXTRACT_BOOKMARKS_FROM_HTML,
-  SYNC_STATE_CHANGED,
-  GET_SYNC_STATE,
 }
 
 
@@ -67,49 +61,3 @@ class OffscreenExtractBookmarksFromHtmlPayload(
   val xPath: String?,
   val documentUrl: String,
 )
-
-@JsExport
-class SyncStateChangedPayload(
-  val syncState: JsonSyncState,
-)
-
-@JsExport
-class JsonSyncState(
-  val lastSync: String?,
-  val folderSyncStates: Array<JsonFolderSyncState>,
-)
-
-@JsExport
-class JsonFolderSyncState(
-  val folderName: String,
-  val state: Int,
-  val errorMessage: String?,
-)
-
-internal fun SyncState.toJsonSyncState(): JsonSyncState {
-  return JsonSyncState(
-    lastSync = lastSync?.toISOString(),
-    folderSyncStates = folderSyncStates.mapValues { (folderName, folderSyncState) ->
-      when (folderSyncState) {
-        FolderSyncState.Syncing -> JsonFolderSyncState(folderName, 0, null)
-        is FolderSyncState.Error -> JsonFolderSyncState(folderName, 1, folderSyncState.message)
-        FolderSyncState.Success -> JsonFolderSyncState(folderName, 2, null)
-      }
-    }.values.toTypedArray()
-  )
-}
-
-fun JsonSyncState.toSyncState(): SyncState {
-  return SyncState(
-    lastSync = lastSync?.let { Date(it) },
-    folderSyncStates = folderSyncStates.map { jsonFolderSyncState ->
-      val folderSyncState = when (jsonFolderSyncState.state) {
-        0 -> FolderSyncState.Syncing
-        1 -> FolderSyncState.Error(jsonFolderSyncState.errorMessage!!)
-        2 -> FolderSyncState.Success
-        else -> throw RuntimeException("Unknown state: ${jsonFolderSyncState.state}")
-      }
-      jsonFolderSyncState.folderName to folderSyncState
-    }.toMap()
-  )
-}

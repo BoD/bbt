@@ -23,12 +23,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.jraf.bbt.shared.syncstate
+package org.jraf.bbt.shared.settings.model
 
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import kotlin.js.Date
 
+@Serializable
 data class SyncState(
+  @Serializable(with = DateSerializer::class)
   val lastSync: Date?,
+
   val folderSyncStates: Map<String, FolderSyncState>,
 ) {
   val isSyncing get() = folderSyncStates.values.any { it is FolderSyncState.Syncing }
@@ -46,10 +56,26 @@ data class SyncState(
   }
 }
 
+@Serializable
 sealed class FolderSyncState {
-  object Syncing : FolderSyncState()
+  @Serializable
+  data object Syncing : FolderSyncState()
 
+  @Serializable
   data class Error(val message: String) : FolderSyncState()
 
-  object Success : FolderSyncState()
+  @Serializable
+  data object Success : FolderSyncState()
+}
+
+private object DateSerializer : KSerializer<Date> {
+  override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("Date", PrimitiveKind.DOUBLE)
+
+  override fun serialize(encoder: Encoder, value: Date) {
+    encoder.encodeDouble(value.getTime())
+  }
+
+  override fun deserialize(decoder: Decoder): Date {
+    return Date(decoder.decodeDouble())
+  }
 }

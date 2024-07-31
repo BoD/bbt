@@ -30,5 +30,6 @@ import kotlinx.js.JsPlainObject
 @JsPlainObject
 external interface AlarmCreateInfo {
   val periodInMinutes: Int
+  val delayInMinutes: Int
 }
 
