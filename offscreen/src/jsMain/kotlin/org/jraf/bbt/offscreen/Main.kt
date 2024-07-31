@@ -28,33 +28,33 @@ package org.jraf.bbt.offscreen
 import org.jraf.bbt.offscreen.domparser.DomParserBookmarkExtractor
 import org.jraf.bbt.shared.logging.initLogs
 import org.jraf.bbt.shared.logging.logd
-import org.jraf.bbt.shared.messaging.Message
-import org.jraf.bbt.shared.messaging.MessageType
-import org.jraf.bbt.shared.messaging.OffscreenExtractBookmarksFromFeedPayload
-import org.jraf.bbt.shared.messaging.OffscreenExtractBookmarksFromHtmlPayload
+import org.jraf.bbt.shared.messaging.OffscreenExtractBookmarksFromFeedMessage
+import org.jraf.bbt.shared.messaging.OffscreenExtractBookmarksFromHtmlMessage
+import org.jraf.bbt.shared.messaging.asMessage
 
 private val domParserBookmarkExtractor = DomParserBookmarkExtractor()
 
 fun main() {
   initLogs(logWithMessages = true, sourceName = "Offscreen")
   logd("main")
-  chrome.runtime.onMessage.addListener { msg, sender, sendResponse ->
-    val message = msg.unsafeCast<Message>()
-    when (message.type) {
-      MessageType.OFFSCREEN_EXTRACT_BOOKMARKS_FROM_FEED.ordinal -> {
-        val logMessage = message.payload.unsafeCast<OffscreenExtractBookmarksFromFeedPayload>()
-        sendResponse(domParserBookmarkExtractor.extractBookmarksFromFeed(logMessage.body))
+  chrome.runtime.onMessage.addListener { msg, _, sendResponse ->
+    when (val message = msg.asMessage()) {
+      is OffscreenExtractBookmarksFromFeedMessage -> {
+        sendResponse(domParserBookmarkExtractor.extractBookmarksFromFeed(message.body))
       }
 
-      MessageType.OFFSCREEN_EXTRACT_BOOKMARKS_FROM_HTML.ordinal -> {
-        val logMessage = message.payload.unsafeCast<OffscreenExtractBookmarksFromHtmlPayload>()
+      is OffscreenExtractBookmarksFromHtmlMessage -> {
         sendResponse(
           domParserBookmarkExtractor.extractBookmarksFromHtml(
-            body = logMessage.body,
-            xPath = logMessage.xPath,
-            documentUrl = logMessage.documentUrl,
+            body = message.body,
+            xPath = message.xPath,
+            documentUrl = message.documentUrl,
           )
         )
+      }
+
+      else -> {
+        // Ignore
       }
     }
   }

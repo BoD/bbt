@@ -39,9 +39,9 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromDynamic
 import kotlinx.serialization.json.encodeToDynamic
 import org.jraf.bbt.shared.logging.logd
-import org.jraf.bbt.shared.messaging.Message
-import org.jraf.bbt.shared.messaging.MessageType
 import org.jraf.bbt.shared.messaging.Messenger
+import org.jraf.bbt.shared.messaging.SettingsChangedMessage
+import org.jraf.bbt.shared.messaging.asMessage
 import org.jraf.bbt.shared.settings.model.Settings
 import org.jraf.bbt.shared.settings.model.SyncItem
 import org.jraf.bbt.shared.settings.model.SyncState
@@ -61,13 +61,16 @@ class SettingsManager private constructor() {
 
   private fun registerMessageListener() {
     chrome.runtime.onMessage.addListener { msg, _, _ ->
-      val message = msg.unsafeCast<Message>()
-      when (message.type) {
-        MessageType.SETTINGS_CHANGED.ordinal -> {
+      when (val message = msg.asMessage()) {
+        SettingsChangedMessage -> {
           GlobalScope.launch {
-            logd("SettingsManager: Received SETTINGS_CHANGED message")
+            logd("SettingsManager: Received SettingsChangedMessage")
             _settings.value = loadSettingsFromStorage().also { logd("SettingsManager: Settings from storage: %o", it) }
           }
+        }
+
+        else -> {
+          // Ignore
         }
       }
     }

@@ -23,41 +23,51 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-@file:OptIn(ExperimentalJsExport::class)
-
 package org.jraf.bbt.shared.messaging
 
-// Need @JsExport because these will be jsonified / dejsonified
-@JsExport
-class Message(
-  val type: Int,
-  val payload: Any?,
-)
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 
-enum class MessageType {
-  LOG,
-  SETTINGS_CHANGED,
-  OFFSCREEN_EXTRACT_BOOKMARKS_FROM_FEED,
-  OFFSCREEN_EXTRACT_BOOKMARKS_FROM_HTML,
-}
+@Serializable
+sealed class Message
 
-
-@JsExport
-class LogPayload(
+@Serializable
+class LogMessage(
   val source: String,
   val level: Int,
   val format: String,
-  val params: Array<out Any?>,
-)
+  val params: Array<out @Serializable(with = JsonStringAnySerializer::class) Any?>,
+) : Message()
 
-@JsExport
-class OffscreenExtractBookmarksFromFeedPayload(
+@Serializable
+data object SettingsChangedMessage : Message()
+
+@Serializable
+class OffscreenExtractBookmarksFromFeedMessage(
   val body: String,
-)
+) : Message()
 
-@JsExport
-class OffscreenExtractBookmarksFromHtmlPayload(
+@Serializable
+class OffscreenExtractBookmarksFromHtmlMessage(
   val body: String,
   val xPath: String?,
   val documentUrl: String,
-)
+) : Message()
+
+
+private object JsonStringAnySerializer : KSerializer<Any> {
+  override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("Any", PrimitiveKind.STRING)
+
+  override fun serialize(encoder: Encoder, value: Any) {
+    encoder.encodeString(JSON.stringify(value))
+  }
+
+  override fun deserialize(decoder: Decoder): Any {
+    return JSON.parse(decoder.decodeString())
+  }
+}

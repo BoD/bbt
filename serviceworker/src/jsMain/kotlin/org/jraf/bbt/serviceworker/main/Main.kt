@@ -43,9 +43,8 @@ import org.jraf.bbt.shared.logging.initLogs
 import org.jraf.bbt.shared.logging.log
 import org.jraf.bbt.shared.logging.logd
 import org.jraf.bbt.shared.logging.logi
-import org.jraf.bbt.shared.messaging.LogPayload
-import org.jraf.bbt.shared.messaging.Message
-import org.jraf.bbt.shared.messaging.MessageType
+import org.jraf.bbt.shared.messaging.LogMessage
+import org.jraf.bbt.shared.messaging.asMessage
 import org.jraf.bbt.shared.settings.SettingsManager.Companion.settingsManager
 import org.jraf.bbt.shared.settings.model.Settings
 
@@ -64,17 +63,19 @@ fun main() {
 }
 
 private fun registerMessageListener() {
-  chrome.runtime.onMessage.addListener { msg, sender, sendResponse ->
-    val message = msg.unsafeCast<Message>()
-    when (message.type) {
-      MessageType.LOG.ordinal -> {
-        val logPayload = message.payload.unsafeCast<LogPayload>()
+  chrome.runtime.onMessage.addListener { msg, _, _ ->
+    when (val message = msg.asMessage()) {
+      is LogMessage -> {
         log(
-          source = logPayload.source,
-          level = LogLevel.entries.first { it.ordinal == logPayload.level },
-          format = logPayload.format,
-          params = logPayload.params
+          source = message.source,
+          level = LogLevel.entries.first { it.ordinal == message.level },
+          format = message.format,
+          params = message.params
         )
+      }
+
+      else -> {
+        // Ignore
       }
     }
   }

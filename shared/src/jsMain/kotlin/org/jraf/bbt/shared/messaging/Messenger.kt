@@ -23,34 +23,40 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 package org.jraf.bbt.shared.messaging
 
 import kotlinx.coroutines.await
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.decodeFromDynamic
+import kotlinx.serialization.json.encodeToDynamic
 import org.jraf.bbt.shared.bookmarks.BookmarksDocument
 import org.jraf.bbt.shared.logging.LogLevel
+import kotlin.js.Promise
 
 class Messenger private constructor() {
+  @OptIn(ExperimentalSerializationApi::class)
+  private fun sendMessage(message: Message): Promise<Any?> {
+    return chrome.runtime.sendMessage(Json.encodeToDynamic(message))
+  }
+
   fun sendLogMessage(source: String, level: LogLevel, format: String, params: Array<out Any?>) {
-    val logPayload = LogPayload(
+    val message = LogMessage(
       source = source,
       level = level.ordinal,
       format = format,
       params = params,
     )
-    val message = Message(type = MessageType.LOG.ordinal, payload = logPayload)
-    chrome.runtime.sendMessage(message)
+    sendMessage(message)
   }
 
   fun sendSettingsChangedMessage() {
-    val message = Message(type = MessageType.SETTINGS_CHANGED.ordinal, payload = null)
-    chrome.runtime.sendMessage(message)
+    sendMessage(SettingsChangedMessage)
   }
 
   suspend fun sendOffscreenExtractBookmarksFromFeedMessage(body: String): BookmarksDocument? {
-    val message =
-      Message(type = MessageType.OFFSCREEN_EXTRACT_BOOKMARKS_FROM_FEED.ordinal, payload = OffscreenExtractBookmarksFromFeedPayload(body))
-    return chrome.runtime.sendMessage(message).await().unsafeCast<BookmarksDocument?>()
+    val message = OffscreenExtractBookmarksFromFeedMessage(body)
+    return sendMessage(message).await().unsafeCast<BookmarksDocument?>()
   }
 
   suspend fun sendOffscreenExtractBookmarksFromHtmlMessage(
@@ -58,18 +64,20 @@ class Messenger private constructor() {
     xPath: String?,
     documentUrl: String,
   ): BookmarksDocument? {
-    val message = Message(
-      type = MessageType.OFFSCREEN_EXTRACT_BOOKMARKS_FROM_HTML.ordinal,
-      payload = OffscreenExtractBookmarksFromHtmlPayload(
-        body = body,
-        xPath = xPath,
-        documentUrl = documentUrl,
-      )
+    val message = OffscreenExtractBookmarksFromHtmlMessage(
+      body = body,
+      xPath = xPath,
+      documentUrl = documentUrl,
     )
-    return chrome.runtime.sendMessage(message).await().unsafeCast<BookmarksDocument?>()
+    return sendMessage(message).await().unsafeCast<BookmarksDocument?>()
   }
 
   companion object {
     val messenger = Messenger()
   }
+}
+
+@OptIn(ExperimentalSerializationApi::class)
+fun Any.asMessage(): Message {
+  return Json.decodeFromDynamic(this)
 }
