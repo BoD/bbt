@@ -86,7 +86,7 @@ class SyncManager {
       bookmarkExtractor.extractBookmarks(
         body = body,
         xPath = remoteBookmarksUrl.extractXPathFragment(),
-        documentUrl = remoteBookmarksUrl
+        documentUrl = remoteBookmarksUrl.withoutXPathFragment()
       )
         ?: run {
           throw RuntimeException("Fetched object doesn't seem to be either valid `bookmarks` JSON format document, RSS/Atom feed, or HTML")
@@ -115,5 +115,9 @@ class SyncManager {
 
   private fun String.extractXPathFragment(): String? {
     return this.substringAfterLast("#__xpath=", "").ifBlank { null }?.let { decodeURIComponent(it) }
+  }
+
+  private fun String.withoutXPathFragment(): String {
+    return this.substringBeforeLast("#__xpath=", "")
   }
 }
