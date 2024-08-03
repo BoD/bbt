@@ -30,6 +30,7 @@ import org.jraf.bbt.shared.logging.initLogs
 import org.jraf.bbt.shared.logging.logd
 import org.jraf.bbt.shared.messaging.OffscreenExtractBookmarksFromFeedMessage
 import org.jraf.bbt.shared.messaging.OffscreenExtractBookmarksFromHtmlMessage
+import org.jraf.bbt.shared.messaging.OffscreenExtractBookmarksFromOpmlMessage
 import org.jraf.bbt.shared.messaging.asMessage
 
 private val domParserBookmarkExtractor = DomParserBookmarkExtractor()
@@ -41,6 +42,10 @@ fun main() {
     when (val message = msg.asMessage()) {
       is OffscreenExtractBookmarksFromFeedMessage -> {
         sendResponse(domParserBookmarkExtractor.extractBookmarksFromFeed(message.body))
+      }
+
+      is OffscreenExtractBookmarksFromOpmlMessage -> {
+        sendResponse(domParserBookmarkExtractor.extractBookmarksFromOpml(message.body))
       }
 
       is OffscreenExtractBookmarksFromHtmlMessage -> {

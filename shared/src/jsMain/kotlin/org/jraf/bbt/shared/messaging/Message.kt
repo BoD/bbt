@@ -48,9 +48,10 @@ class LogMessage(
 data object SettingsChangedMessage : Message()
 
 @Serializable
-class OffscreenExtractBookmarksFromFeedMessage(
-  val body: String,
-) : Message()
+class OffscreenExtractBookmarksFromFeedMessage(val body: String) : Message()
+
+@Serializable
+class OffscreenExtractBookmarksFromOpmlMessage(val body: String) : Message()
 
 @Serializable
 class OffscreenExtractBookmarksFromHtmlMessage(

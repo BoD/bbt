@@ -59,6 +59,11 @@ class Messenger private constructor() {
     return sendMessage(message).await().unsafeCast<BookmarksDocument?>()
   }
 
+  suspend fun sendOffscreenExtractBookmarksFromOpmlMessage(body: String): BookmarksDocument? {
+    val message = OffscreenExtractBookmarksFromOpmlMessage(body)
+    return sendMessage(message).await().unsafeCast<BookmarksDocument?>()
+  }
+
   suspend fun sendOffscreenExtractBookmarksFromHtmlMessage(
     body: String,
     xPath: String?,

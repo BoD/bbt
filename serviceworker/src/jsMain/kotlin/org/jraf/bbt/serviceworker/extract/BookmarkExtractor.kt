@@ -48,7 +48,13 @@ class BookmarkExtractor {
       return bookmarksDocument
     }
 
-    logd("Could not parse fetched text as RSS/Atom, trying HTML")
+    logd("Could not parse fetched text as RSS/Atom, trying OPML")
+    bookmarksDocument = extractBookmarksFromOpml(body)
+    if (bookmarksDocument != null) {
+      return bookmarksDocument
+    }
+
+    logd("Could not parse fetched text as OPML, trying HTML")
     bookmarksDocument = extractBookmarksFromHtml(
       body = body,
       xPath = xPath,
@@ -90,6 +96,17 @@ class BookmarkExtractor {
   suspend fun extractBookmarksFromFeed(body: String): BookmarksDocument? {
     ensureOffscreenDocumentCreated()
     return messenger.sendOffscreenExtractBookmarksFromFeedMessage(body)
+  }
+
+  /**
+   * Extract bookmarks from a body that is an OPML document.
+   *
+   * The `DomParser` API is not available in the Service Worker context, so we offload this to an offscreen document.
+   * Yes, this is convoluted :(. Thanks Chrome!
+   */
+  suspend fun extractBookmarksFromOpml(body: String): BookmarksDocument? {
+    ensureOffscreenDocumentCreated()
+    return messenger.sendOffscreenExtractBookmarksFromOpmlMessage(body)
   }
 
   /**

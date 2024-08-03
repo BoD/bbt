@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.6.0 - 2024-08-03
+
+- Fix an issue where sync would always start when showing the popup
+- Tweak popup UI
+- Add support for OPML format
+
 ## v1.5.0 - 2024-07-21
 
 - Handle HTML as a format in addition to RSS, Atom and Bookmarks Json format.
