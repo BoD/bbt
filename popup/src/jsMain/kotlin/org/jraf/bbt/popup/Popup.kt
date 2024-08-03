@@ -228,7 +228,8 @@ private fun ColumnScope.SyncItemList(
             }
           }
 
-          Spacer(Modifier.width(8.dp))
+          // Should 'logically' be here, but it looks better without it ¯\_(ツ)_/¯ IANAD
+//          Spacer(Modifier.width(8.dp))
 
           // Remove button
           IconButton(
