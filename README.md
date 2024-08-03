@@ -1,6 +1,6 @@
 # BoD's Bookmark Tool
 
-This small extension for Chrome allows you to synchronize bookmark folders with a remote document.
+This small browser extension allows you to synchronize bookmark folders with a remote document.
 
 Ideal to share a bunch of bookmarks with your team at work, or your loved ones!
 
