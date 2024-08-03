@@ -233,6 +233,7 @@ private fun ColumnScope.SyncItemList(
 
           // Remove button
           IconButton(
+            modifier = Modifier.width(40.dp),
             onClick = {
               onRemoveItem(syncItem)
             },
@@ -285,7 +286,7 @@ private fun AddItemRow(onAddItem: suspend (folderName: String, remoteBookmarksUr
     var remoteBookmarksUrlErrorText: String? by remember { mutableStateOf(null) }
     DenseOutlinedTextField(
       modifier = Modifier.width(320.dp),
-      placeholder = { Text("URL (RSS, Atom, JSON, HTML)") },
+      placeholder = { Text("URL (RSS, Atom, OPML, JSON, HTML)") },
       value = remoteBookmarksUrl,
       singleLine = true,
       onValueChange = {
@@ -307,7 +308,7 @@ private fun AddItemRow(onAddItem: suspend (folderName: String, remoteBookmarksUr
     OutlinedButton(
       modifier = Modifier
         .height(48.dp)
-        .width(88.dp),
+        .width(80.dp),
       contentPadding = PaddingValues(0.dp),
       enabled = isAddButtonEnabled,
       onClick = {
