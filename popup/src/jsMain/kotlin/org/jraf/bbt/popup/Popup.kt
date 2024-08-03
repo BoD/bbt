@@ -46,6 +46,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -61,6 +62,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.dp
 import bbt.popup.generated.resources.Res
 import bbt.popup.generated.resources.check_24px
+import bbt.popup.generated.resources.delete_24px
 import bbt.popup.generated.resources.logo
 import bbt.popup.generated.resources.sync_24px
 import bbt.popup.generated.resources.warning_24px
@@ -72,15 +74,14 @@ import org.jraf.bbt.popup.components.SwitchWithLabel
 import org.jraf.bbt.popup.theme.successColor
 import org.jraf.bbt.popup.theme.warningColor
 import org.jraf.bbt.shared.VERSION
+import org.jraf.bbt.shared.settings.model.FolderSyncState
 import org.jraf.bbt.shared.settings.model.Settings
 import org.jraf.bbt.shared.settings.model.SyncItem
-import org.jraf.bbt.shared.syncstate.FolderSyncState
-import org.jraf.bbt.shared.syncstate.SyncState
+import org.jraf.bbt.shared.settings.model.SyncState
 
 @Composable
 fun Popup(
   settings: Settings,
-  syncState: SyncState,
   onSyncEnabledCheckedChange: (Boolean) -> Unit,
   onAddItem: suspend (folderName: String, remoteBookmarksUrl: String) -> AddItemResult,
   onRemoveItem: (SyncItem) -> Unit,
@@ -99,7 +100,7 @@ fun Popup(
       Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(
           modifier = Modifier.alpha(.75F),
-          text = "BoD's Bookmark Tool $VERSION\n" + syncStatusText(syncState),
+          text = "BoD's Bookmark Tool $VERSION\n" + syncStatusText(syncState = settings.syncState),
           style = MaterialTheme.typography.labelSmall,
         )
 
@@ -117,7 +118,6 @@ fun Popup(
 
     SyncItemList(
       settings = settings,
-      syncState = syncState,
       onAddItem = onAddItem,
       onRemoveItem = onRemoveItem,
     )
@@ -125,7 +125,7 @@ fun Popup(
 }
 
 private fun syncStatusText(syncState: SyncState) = if (syncState.isSyncing) {
-  "Sync ongoing…"
+  "Sync ongoing..."
 } else {
   val lastSync = syncState.lastSync
   if (lastSync == null) {
@@ -142,7 +142,6 @@ private fun syncStatusText(syncState: SyncState) = if (syncState.isSyncing) {
 @Composable
 private fun ColumnScope.SyncItemList(
   settings: Settings,
-  syncState: SyncState,
   onAddItem: suspend (folderName: String, remoteBookmarksUrl: String) -> AddItemResult,
   onRemoveItem: (SyncItem) -> Unit,
 ) {
@@ -166,6 +165,7 @@ private fun ColumnScope.SyncItemList(
         Row(
           verticalAlignment = Alignment.CenterVertically,
         ) {
+          // Folder name
           DenseOutlinedTextField(
             modifier = Modifier.width(192.dp),
             value = syncItem.folderName,
@@ -176,6 +176,7 @@ private fun ColumnScope.SyncItemList(
 
           Spacer(Modifier.width(8.dp))
 
+          // Remote bookmarks URL
           DenseOutlinedTextField(
             modifier = Modifier.width(320.dp),
             value = syncItem.remoteBookmarksUrl,
@@ -184,11 +185,14 @@ private fun ColumnScope.SyncItemList(
             onValueChange = { }
           )
 
+          Spacer(Modifier.width(8.dp))
+
+          // Sync indication
           Box(
             modifier = Modifier.width(40.dp),
             contentAlignment = Alignment.Center,
           ) {
-            AnimatedContent(syncState.folderSyncStates[syncItem.folderName]) { folderSyncState ->
+            AnimatedContent(settings.syncState.folderSyncStates[syncItem.folderName]) { folderSyncState ->
               when (folderSyncState) {
                 FolderSyncState.Syncing -> {
                   Rotate {
@@ -224,16 +228,18 @@ private fun ColumnScope.SyncItemList(
             }
           }
 
-          OutlinedButton(
-            modifier = Modifier
-              .height(48.dp)
-              .width(96.dp),
-            contentPadding = PaddingValues(0.dp),
+          Spacer(Modifier.width(8.dp))
+
+          // Remove button
+          IconButton(
             onClick = {
               onRemoveItem(syncItem)
-            }
+            },
           ) {
-            Text("Remove")
+            Icon(
+              painter = painterResource(Res.drawable.delete_24px),
+              contentDescription = "Remove",
+            )
           }
         }
       }
@@ -291,7 +297,7 @@ private fun AddItemRow(onAddItem: suspend (folderName: String, remoteBookmarksUr
       },
     )
 
-    Spacer(Modifier.width(40.dp))
+    Spacer(Modifier.width(8.dp))
 
     // Add button
     val coroutineScope = rememberCoroutineScope()
@@ -300,7 +306,7 @@ private fun AddItemRow(onAddItem: suspend (folderName: String, remoteBookmarksUr
     OutlinedButton(
       modifier = Modifier
         .height(48.dp)
-        .width(96.dp),
+        .width(88.dp),
       contentPadding = PaddingValues(0.dp),
       enabled = isAddButtonEnabled,
       onClick = {

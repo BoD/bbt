@@ -34,14 +34,17 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.decodeFromDynamic
+import kotlinx.serialization.json.encodeToDynamic
 import org.jraf.bbt.shared.logging.logd
-import org.jraf.bbt.shared.messaging.Message
-import org.jraf.bbt.shared.messaging.MessageType
 import org.jraf.bbt.shared.messaging.Messenger
-import org.jraf.bbt.shared.settings.model.JsonSettings
-import org.jraf.bbt.shared.settings.model.JsonSyncItem
+import org.jraf.bbt.shared.messaging.SettingsChangedMessage
+import org.jraf.bbt.shared.messaging.asMessage
 import org.jraf.bbt.shared.settings.model.Settings
 import org.jraf.bbt.shared.settings.model.SyncItem
+import org.jraf.bbt.shared.settings.model.SyncState
 
 class SettingsManager private constructor() {
   private val _settings = MutableStateFlow<Settings?>(null)
@@ -58,13 +61,16 @@ class SettingsManager private constructor() {
 
   private fun registerMessageListener() {
     chrome.runtime.onMessage.addListener { msg, _, _ ->
-      val message = msg.unsafeCast<Message>()
-      when (message.type) {
-        MessageType.SETTINGS_CHANGED.ordinal -> {
+      when (val message = msg.asMessage()) {
+        SettingsChangedMessage -> {
           GlobalScope.launch {
-            logd("SettingsManager: Received SETTINGS_CHANGED message")
+            logd("SettingsManager: Received SettingsChangedMessage")
             _settings.value = loadSettingsFromStorage().also { logd("SettingsManager: Settings from storage: %o", it) }
           }
+        }
+
+        else -> {
+          // Ignore
         }
       }
     }
@@ -81,17 +87,17 @@ class SettingsManager private constructor() {
             folderName = "Sample",
             remoteBookmarksUrl = "https://en.wikipedia.org/wiki/List_of_James_Bond_films#__xpath=//table//th/i//a"
           )
-        )
+        ),
+        syncState = SyncState.initialState(),
       )
     } else {
-      val jsonSettings = obj.unsafeCast<JsonSettings>()
-      jsonSettings.toSettings()
+      toSettings(obj)
     }
   }
 
   suspend fun saveSettingsToStorage(settings: Settings) {
     val obj = js("{}")
-    obj.settings = settings.toJsonSettings()
+    obj.settings = settings.toDynamic()
     chrome.storage.sync.set(obj).await()
     // For this frame
     _settings.value = settings
@@ -104,22 +110,8 @@ class SettingsManager private constructor() {
   }
 }
 
-private fun Settings.toJsonSettings() = JsonSettings(
-  syncEnabled = syncEnabled,
-  syncItems = syncItems.map {
-    JsonSyncItem(
-      folderName = it.folderName,
-      remoteBookmarksUrl = it.remoteBookmarksUrl
-    )
-  }.toTypedArray()
-)
+@OptIn(ExperimentalSerializationApi::class)
+private fun Settings.toDynamic(): dynamic = Json.encodeToDynamic(this)
 
-private fun JsonSettings.toSettings() = Settings(
-  syncEnabled = syncEnabled,
-  syncItems = syncItems.map {
-    SyncItem(
-      folderName = it.folderName,
-      remoteBookmarksUrl = it.remoteBookmarksUrl
-    )
-  }
-)
+@OptIn(ExperimentalSerializationApi::class)
+private fun toSettings(o: dynamic): Settings = Json.decodeFromDynamic<Settings>(o)

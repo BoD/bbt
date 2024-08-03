@@ -237,7 +237,7 @@ private suspend fun isAlreadySyncedFolder(folderName: String): Boolean {
 private val onSyncStateChanged: (SyncState) -> Unit = { syncState ->
   val tdLastSync = document.getElementById("tdLastSync")!!
   if (syncState.isSyncing) {
-    tdLastSync.innerHTML = "Sync ongoing…"
+    tdLastSync.innerHTML = "Sync ongoing..."
   } else {
     tdLastSync.innerHTML = if (syncState.lastSync == null) {
       ""
@@ -264,7 +264,7 @@ private val onSyncStateChanged: (SyncState) -> Unit = { syncState ->
 
         is FolderSyncState.Syncing -> {
           imgSyncState.src = "icons/syncing.png"
-          imgSyncState.title = "Sync ongoing…"
+          imgSyncState.title = "Sync ongoing..."
         }
 
         is FolderSyncState.Error -> {

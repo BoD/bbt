@@ -37,32 +37,30 @@ import org.jraf.bbt.shared.bookmarks.isBookmark
 import org.jraf.bbt.shared.bookmarks.sanitize
 import org.jraf.bbt.shared.logging.logd
 import org.jraf.bbt.shared.logging.logw
-import org.jraf.bbt.shared.messaging.Messenger.Companion.messenger
 import org.jraf.bbt.shared.settings.SettingsManager.Companion.settingsManager
-import org.jraf.bbt.shared.syncstate.SyncState
+import org.jraf.bbt.shared.settings.model.SyncState
 import org.jraf.bbt.shared.util.decodeURIComponent
 import org.jraf.bbt.shared.util.transitiveMessage
 
 class SyncManager {
-  private var syncState = SyncState.initialState()
   private val bookmarkExtractor = BookmarkExtractor()
 
   suspend fun syncFolders() {
     logd("Start syncing...")
-    publishSyncState { asStartSyncing() }
+    saveSyncState { asStartSyncing() }
     val settings = settingsManager.settings.first()
     for (syncItem in settings.syncItems) {
-      publishSyncState { asSyncing(folderName = syncItem.folderName) }
+      saveSyncState { asSyncing(folderName = syncItem.folderName) }
       try {
         syncFolder(syncItem.folderName, syncItem.remoteBookmarksUrl)
         logd("Finished sync of '${syncItem.folderName}' successfully")
-        publishSyncState { asSuccess(folderName = syncItem.folderName) }
+        saveSyncState { asSuccess(folderName = syncItem.folderName) }
       } catch (e: Exception) {
         logw("Finished sync of '${syncItem.folderName}' with error: %O", e.stackTraceToString())
-        publishSyncState { asError(folderName = syncItem.folderName, message = e.transitiveMessage) }
+        saveSyncState { asError(folderName = syncItem.folderName, message = e.transitiveMessage) }
       }
     }
-    publishSyncState { asFinishSyncing() }
+    saveSyncState { asFinishSyncing() }
     logd("Sync finished")
     logd("")
   }
@@ -88,7 +86,7 @@ class SyncManager {
       bookmarkExtractor.extractBookmarks(
         body = body,
         xPath = remoteBookmarksUrl.extractXPathFragment(),
-        documentUrl = remoteBookmarksUrl
+        documentUrl = remoteBookmarksUrl.withoutXPathFragment()
       )
         ?: run {
           throw RuntimeException("Fetched object doesn't seem to be either valid `bookmarks` JSON format document, RSS/Atom feed, or HTML")
@@ -110,16 +108,16 @@ class SyncManager {
     }
   }
 
-  private fun publishSyncState(transform: SyncState.() -> SyncState) {
-    syncState = transform(syncState)
-    messenger.sendSyncStateChangedMessage(syncState)
+  private suspend fun saveSyncState(transform: SyncState.() -> SyncState) {
+    val settings = settingsManager.settings.first()
+    settingsManager.saveSettingsToStorage(settings.copy(syncState = transform(settings.syncState)))
   }
 
   private fun String.extractXPathFragment(): String? {
     return this.substringAfterLast("#__xpath=", "").ifBlank { null }?.let { decodeURIComponent(it) }
   }
 
-  fun sendSyncState() {
-    messenger.sendSyncStateChangedMessage(syncState)
+  private fun String.withoutXPathFragment(): String {
+    return this.substringBeforeLast("#__xpath=", "")
   }
 }

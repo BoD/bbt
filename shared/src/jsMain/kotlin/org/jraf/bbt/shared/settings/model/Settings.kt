@@ -25,11 +25,16 @@
 
 package org.jraf.bbt.shared.settings.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class Settings(
   val syncEnabled: Boolean,
   val syncItems: List<SyncItem>,
+  val syncState: SyncState,
 )
 
+@Serializable
 data class SyncItem(
   val folderName: String,
   val remoteBookmarksUrl: String,

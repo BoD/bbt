@@ -43,9 +43,8 @@ import org.jraf.bbt.shared.logging.initLogs
 import org.jraf.bbt.shared.logging.log
 import org.jraf.bbt.shared.logging.logd
 import org.jraf.bbt.shared.logging.logi
-import org.jraf.bbt.shared.messaging.LogPayload
-import org.jraf.bbt.shared.messaging.Message
-import org.jraf.bbt.shared.messaging.MessageType
+import org.jraf.bbt.shared.messaging.LogMessage
+import org.jraf.bbt.shared.messaging.asMessage
 import org.jraf.bbt.shared.settings.SettingsManager.Companion.settingsManager
 import org.jraf.bbt.shared.settings.model.Settings
 
@@ -60,37 +59,32 @@ fun main() {
   initLogs(logWithMessages = false, sourceName = "Core")
   logi("$EXTENSION_NAME $VERSION")
   registerMessageListener()
-  registerAlarmListener()
   registerSettingsListener()
 }
 
 private fun registerMessageListener() {
-  chrome.runtime.onMessage.addListener { msg, sender, sendResponse ->
-    val message = msg.unsafeCast<Message>()
-    when (message.type) {
-      MessageType.LOG.ordinal -> {
-        val logPayload = message.payload.unsafeCast<LogPayload>()
+  chrome.runtime.onMessage.addListener { msg, _, _ ->
+    when (val message = msg.asMessage()) {
+      is LogMessage -> {
         log(
-          source = logPayload.source,
-          level = LogLevel.entries.first { it.ordinal == logPayload.level },
-          format = logPayload.format,
-          params = logPayload.params
+          source = message.source,
+          level = LogLevel.entries.first { it.ordinal == message.level },
+          format = message.format,
+          params = message.params
         )
       }
 
-      MessageType.GET_SYNC_STATE.ordinal -> {
-        syncManager.sendSyncState()
+      else -> {
+        // Ignore
       }
     }
   }
 }
 
-private fun registerAlarmListener() {
-  onAlarm.addListener {
-    logd("Alarm triggered")
-    GlobalScope.launch {
-      syncManager.syncFolders()
-    }
+private val onAlarmTriggered: () -> Unit = {
+  logd("Alarm triggered")
+  GlobalScope.launch {
+    syncManager.syncFolders()
   }
 }
 
@@ -102,20 +96,29 @@ fun registerSettingsListener() {
   }
 }
 
+private var syncWasDisabled = false
+
 private suspend fun onSettingsChanged(settings: Settings) {
   logd("Settings changed: $settings")
   if (settings.syncEnabled) {
     logd("Sync enabled, scheduled every $SYNC_PERIOD_MINUTES minutes")
     updateBadge(true)
+    stopScheduling()
     startScheduling()
-    // Launch the sync in another coroutine to not make this fun blocking too long
-    GlobalScope.launch {
-      syncManager.syncFolders()
+
+    // Going from disabled to enabled -> sync now
+    if (syncWasDisabled) {
+      // Launch the sync in another coroutine to not make this fun blocking too long
+      GlobalScope.launch {
+        syncManager.syncFolders()
+      }
     }
+    syncWasDisabled = false
   } else {
     logd("Sync disabled")
     updateBadge(false)
     stopScheduling()
+    syncWasDisabled = true
   }
 }
 
@@ -129,10 +132,17 @@ private fun updateBadge(enabled: Boolean) {
 }
 
 private fun startScheduling() {
-  chrome.alarms.create(ALARM_NAME, AlarmCreateInfo(periodInMinutes = SYNC_PERIOD_MINUTES))
+  onAlarm.addListener(onAlarmTriggered)
+  chrome.alarms.create(
+    ALARM_NAME,
+    AlarmCreateInfo(
+      periodInMinutes = SYNC_PERIOD_MINUTES,
+      delayInMinutes = SYNC_PERIOD_MINUTES,
+    ),
+  )
 }
 
 private fun stopScheduling() {
+  onAlarm.removeListener(onAlarmTriggered)
   chrome.alarms.clearAll()
 }
-

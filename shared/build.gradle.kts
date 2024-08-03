@@ -1,6 +1,7 @@
 plugins {
   kotlin("multiplatform")
   kotlin("plugin.js-plain-objects")
+  kotlin("plugin.serialization")
 }
 
 repositories {
@@ -33,6 +34,7 @@ kotlin {
 
     dependencies {
       api(KotlinX.coroutines.core)
+      api(KotlinX.serialization.json)
     }
   }
 }

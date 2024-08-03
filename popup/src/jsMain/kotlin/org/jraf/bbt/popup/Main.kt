@@ -34,10 +34,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.CanvasBasedWindow
-import kotlinx.browser.window
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.jetbrains.skiko.wasm.onWasmReady
@@ -45,52 +43,25 @@ import org.jraf.bbt.popup.theme.BbtTheme
 import org.jraf.bbt.shared.bookmarks.BookmarkManager.Companion.bookmarkManager
 import org.jraf.bbt.shared.logging.initLogs
 import org.jraf.bbt.shared.logging.logd
-import org.jraf.bbt.shared.messaging.Message
-import org.jraf.bbt.shared.messaging.MessageType
-import org.jraf.bbt.shared.messaging.Messenger.Companion.messenger
-import org.jraf.bbt.shared.messaging.SyncStateChangedPayload
-import org.jraf.bbt.shared.messaging.toSyncState
 import org.jraf.bbt.shared.settings.SettingsManager.Companion.settingsManager
 import org.jraf.bbt.shared.settings.model.SyncItem
-import org.jraf.bbt.shared.syncstate.SyncState
 import org.jraf.bbt.shared.util.equalsIgnoreCase
 import org.jraf.bbt.shared.util.isValidUrl
-
-private val syncState = MutableStateFlow<SyncState?>(null)
-
-private fun observeSyncState() {
-  val callback: (message: Any, sender: Any, sendResponse: (Any?) -> Unit) -> Unit = { msg, _, _ ->
-    val message = msg.unsafeCast<Message>()
-    when (message.type) {
-      MessageType.SYNC_STATE_CHANGED.ordinal -> {
-        val syncStateChangedPayload = message.payload.unsafeCast<SyncStateChangedPayload>()
-        syncState.value = syncStateChangedPayload.syncState.toSyncState()
-      }
-    }
-  }
-  chrome.runtime.onMessage.addListener(callback)
-  window.onblur = { chrome.runtime.onMessage.removeListener(callback) }
-}
 
 // This is executed every time popup.html is opened.
 fun main() {
   initLogs(logWithMessages = true, sourceName = "Popup")
   logd("Popup open")
 
-  observeSyncState()
-  messenger.sendGetSyncStateMessage()
-
   onWasmReady {
     @OptIn(ExperimentalComposeUiApi::class)
     CanvasBasedWindow(canvasElementId = "ComposeTarget") {
       val settings by settingsManager.settings.collectAsState(null)
-      val syncState by syncState.collectAsState()
       BbtTheme {
         Surface(Modifier.fillMaxSize()) {
-          if (settings != null && syncState != null) {
+          if (settings != null) {
             Popup(
               settings = settings!!,
-              syncState = syncState!!,
               onSyncEnabledCheckedChange = ::onSyncEnabledCheckedChange,
               onAddItem = ::onAddItem,
               onRemoveItem = ::onRemoveItem,

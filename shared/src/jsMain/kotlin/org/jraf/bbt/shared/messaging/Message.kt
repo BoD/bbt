@@ -23,93 +23,51 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-@file:OptIn(ExperimentalJsExport::class)
-
 package org.jraf.bbt.shared.messaging
 
-import org.jraf.bbt.shared.syncstate.FolderSyncState
-import org.jraf.bbt.shared.syncstate.SyncState
-import kotlin.js.Date
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 
-// Need @JsExport because these will be jsonified / dejsonified
-@JsExport
-class Message(
-  val type: Int,
-  val payload: Any?,
-)
+@Serializable
+sealed class Message
 
-enum class MessageType {
-  LOG,
-  SETTINGS_CHANGED,
-  OFFSCREEN_EXTRACT_BOOKMARKS_FROM_FEED,
-  OFFSCREEN_EXTRACT_BOOKMARKS_FROM_HTML,
-  SYNC_STATE_CHANGED,
-  GET_SYNC_STATE,
-}
-
-
-@JsExport
-class LogPayload(
+@Serializable
+class LogMessage(
   val source: String,
   val level: Int,
   val format: String,
-  val params: Array<out Any?>,
-)
+  val params: Array<out @Serializable(with = JsonStringAnySerializer::class) Any?>,
+) : Message()
 
-@JsExport
-class OffscreenExtractBookmarksFromFeedPayload(
+@Serializable
+data object SettingsChangedMessage : Message()
+
+@Serializable
+class OffscreenExtractBookmarksFromFeedMessage(
   val body: String,
-)
+) : Message()
 
-@JsExport
-class OffscreenExtractBookmarksFromHtmlPayload(
+@Serializable
+class OffscreenExtractBookmarksFromHtmlMessage(
   val body: String,
   val xPath: String?,
   val documentUrl: String,
-)
+) : Message()
 
-@JsExport
-class SyncStateChangedPayload(
-  val syncState: JsonSyncState,
-)
 
-@JsExport
-class JsonSyncState(
-  val lastSync: String?,
-  val folderSyncStates: Array<JsonFolderSyncState>,
-)
+private object JsonStringAnySerializer : KSerializer<Any> {
+  override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("Any", PrimitiveKind.STRING)
 
-@JsExport
-class JsonFolderSyncState(
-  val folderName: String,
-  val state: Int,
-  val errorMessage: String?,
-)
+  override fun serialize(encoder: Encoder, value: Any) {
+    encoder.encodeString(JSON.stringify(value))
+  }
 
-internal fun SyncState.toJsonSyncState(): JsonSyncState {
-  return JsonSyncState(
-    lastSync = lastSync?.toISOString(),
-    folderSyncStates = folderSyncStates.mapValues { (folderName, folderSyncState) ->
-      when (folderSyncState) {
-        FolderSyncState.Syncing -> JsonFolderSyncState(folderName, 0, null)
-        is FolderSyncState.Error -> JsonFolderSyncState(folderName, 1, folderSyncState.message)
-        FolderSyncState.Success -> JsonFolderSyncState(folderName, 2, null)
-      }
-    }.values.toTypedArray()
-  )
-}
-
-fun JsonSyncState.toSyncState(): SyncState {
-  return SyncState(
-    lastSync = lastSync?.let { Date(it) },
-    folderSyncStates = folderSyncStates.map { jsonFolderSyncState ->
-      val folderSyncState = when (jsonFolderSyncState.state) {
-        0 -> FolderSyncState.Syncing
-        1 -> FolderSyncState.Error(jsonFolderSyncState.errorMessage!!)
-        2 -> FolderSyncState.Success
-        else -> throw RuntimeException("Unknown state: ${jsonFolderSyncState.state}")
-      }
-      jsonFolderSyncState.folderName to folderSyncState
-    }.toMap()
-  )
+  override fun deserialize(decoder: Decoder): Any {
+    return JSON.parse(decoder.decodeString())
+  }
 }
