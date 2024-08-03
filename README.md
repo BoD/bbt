@@ -22,8 +22,8 @@ bookmarks.
 
 ### OPML
 
-The `outline` elements will be extracted from the OPML document, and the `text` or 'title' attributes will be used for the bookmark's name.
-The `url`, 'htmlUrl', or 'xmlUrl' attributes will be used for the bookmark's URL.
+The `outline` elements will be extracted from the OPML document, and the `text` or `title` attributes will be used for the bookmark's name.
+The `url`, `htmlUrl`, or `xmlUrl` attributes will be used for the bookmark's URL.
 
 Subfolders are supported by nesting `outline` elements.
 
