@@ -1,6 +1,6 @@
 # BoD's Bookmark Tool
 
-This small extension for Chrome allows you to synchronize any bookmark folder with a remote document.
+This small extension for Chrome allows you to synchronize bookmark folders with a remote document.
 
 Ideal to share a bunch of bookmarks with your team at work, or your loved ones!
 
@@ -13,18 +13,25 @@ Ideal to share a bunch of bookmarks with your team at work, or your loved ones!
 
 ## Supported remote document formats
 
-The remote document can either be RSS, Atom, HTML, or a proprietary "bookmarks" JSON format.
+The remote document can either be RSS, Atom, OPML, HTML, or a 'bookmarks' JSON format.
 
 ### RSS / Atom
 
 The `item` elements will be extracted from the feed, and the `title` and `link` elements / `href` attributes will be used to create the
 bookmarks.
 
+### OPML
+
+The `outline` elements will be extracted from the OPML document, and the `text` or 'title' attributes will be used for the bookmark's name.
+The `url`, 'htmlUrl', or 'xmlUrl' attributes will be used for the bookmark's URL.
+
+Subfolders are supported by nesting `outline` elements.
+
 ### HTML
 
 All `A` elements of the document will be extracted, unless an XPath expression is provided in the URL.
 To do so, append `#__xpath=<expression>` to the URL, for instance `https://example.com/bookmarks.html#__xpath=//div[@id='bookmarks']`.
-The XPath can either refer to a list of `A` elements, or a single container from which the embedded `A` elements will be extracted.
+The XPath can either refer to a list of `A` elements, or a single container under which all `A` elements will be extracted.
 
 ### "bookmarks" JSON
 

@@ -81,6 +81,63 @@ class DomParserBookmarkExtractor {
   }
 
   /**
+   * Extract bookmarks from a body that is an OPML document.
+   */
+  fun extractBookmarksFromOpml(body: String): BookmarksDocument? {
+    return try {
+      val document = DOMParser().parseFromString(body, "text/xml") as XMLDocument
+      val rootElementName = document.documentElement?.tagName
+      if (rootElementName != "opml") {
+        logw("Text can't be parsed as OPML: root element is not 'opml'")
+        return null
+      }
+
+      fun Element.toBookmarkItem(): BookmarkItem? {
+        val title = getAttribute("text")?.ifBlank { null }
+          ?: getAttribute("title")?.ifBlank { null }
+          ?: "Untitled"
+        val url = getAttribute("url")?.ifBlank { null }
+          ?: getAttribute("htmlUrl")?.ifBlank { null }
+          ?: getAttribute("xmlUrl")?.ifBlank { null }
+        return if (url == null) {
+          val children = getChildrenByTagName("outline")
+          if (children.isEmpty()) {
+            logw("Outline element has no url attribute and no outline children")
+            null
+          } else {
+            BookmarkItem(
+              title = title,
+              url = null,
+              bookmarks = children.mapNotNull { it.toBookmarkItem() }.toTypedArray(),
+            )
+          }
+        } else {
+          BookmarkItem(
+            title = title,
+            url = url,
+            bookmarks = null,
+          )
+        }
+      }
+
+      val bodyElement = document.getElementsByTagName("body").item(0) ?: run {
+        logw("No body element found in the document")
+        return null
+      }
+      val outlineElements = bodyElement.getChildrenByTagName("outline")
+      BookmarksDocument(
+        bookmarks = outlineElements.mapNotNull { outlineElement ->
+          outlineElement.toBookmarkItem()
+        }
+          .toTypedArray()
+      )
+    } catch (t: Throwable) {
+      logw("Text can't be parsed as OPML: ${t.message} %O", t.stackTraceToString())
+      null
+    }
+  }
+
+  /**
    * Extract bookmarks from a body that is an HTML document.
    * If [xPath] is not null, only the element(s) at this XPath will be considered.
    *
@@ -168,3 +225,5 @@ class DomParserBookmarkExtractor {
     return nodesAtXpath
   }
 }
+
+private fun Element.getChildrenByTagName(tagName: String) = getElementsByTagName(tagName).asList().filter { it.parentElement == this }
