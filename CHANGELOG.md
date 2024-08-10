@@ -1,10 +1,14 @@
 # Changelog
 
+## v1.6.1 - 2024-08-10
+
+- Try to fix an issue where periodic sync wouldn't be triggered.
+
 ## v1.6.0 - 2024-08-03
 
-- Fix an issue where sync would always start when showing the popup
-- Tweak popup UI
-- Add support for OPML format
+- Fix an issue where sync would always start when showing the popup.
+- Tweak popup UI.
+- Add support for OPML format.
 
 ## v1.5.0 - 2024-07-21
 

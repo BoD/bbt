@@ -35,6 +35,8 @@ import chrome.alarms.AlarmCreateInfo
 import chrome.alarms.onAlarm
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.jraf.bbt.shared.EXTENSION_NAME
 import org.jraf.bbt.shared.VERSION
@@ -46,7 +48,6 @@ import org.jraf.bbt.shared.logging.logi
 import org.jraf.bbt.shared.messaging.LogMessage
 import org.jraf.bbt.shared.messaging.asMessage
 import org.jraf.bbt.shared.settings.SettingsManager.Companion.settingsManager
-import org.jraf.bbt.shared.settings.model.Settings
 
 private const val SYNC_PERIOD_MINUTES = 30
 
@@ -90,35 +91,31 @@ private val onAlarmTriggered: () -> Unit = {
 
 fun registerSettingsListener() {
   GlobalScope.launch {
-    settingsManager.settings.collect { settings ->
-      onSettingsChanged(settings)
-    }
+    settingsManager.settings
+      .map { it.syncEnabled }
+      .distinctUntilChanged()
+      .collect { syncEnabled ->
+        onSyncEnabledChanged(syncEnabled)
+      }
   }
 }
 
-private var syncWasDisabled = false
-
-private suspend fun onSettingsChanged(settings: Settings) {
-  logd("Settings changed: $settings")
-  if (settings.syncEnabled) {
+private fun onSyncEnabledChanged(syncEnabled: Boolean) {
+  logd("syncEnabled changed: $syncEnabled")
+  if (syncEnabled) {
     logd("Sync enabled, scheduled every $SYNC_PERIOD_MINUTES minutes")
     updateBadge(true)
     stopScheduling()
     startScheduling()
 
-    // Going from disabled to enabled -> sync now
-    if (syncWasDisabled) {
-      // Launch the sync in another coroutine to not make this fun blocking too long
-      GlobalScope.launch {
-        syncManager.syncFolders()
-      }
+    // Sync now
+    GlobalScope.launch {
+      syncManager.syncFolders()
     }
-    syncWasDisabled = false
   } else {
     logd("Sync disabled")
     updateBadge(false)
     stopScheduling()
-    syncWasDisabled = true
   }
 }
 

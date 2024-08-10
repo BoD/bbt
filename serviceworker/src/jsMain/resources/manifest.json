@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "BoD's Bookmark Tool",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "description": "BoD's Bookmark Tool",
   "icons": {
     "16": "icons/16x16.png",

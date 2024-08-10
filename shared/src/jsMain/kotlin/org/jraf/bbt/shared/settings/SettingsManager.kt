@@ -65,7 +65,7 @@ class SettingsManager private constructor() {
         SettingsChangedMessage -> {
           GlobalScope.launch {
             logd("SettingsManager: Received SettingsChangedMessage")
-            _settings.value = loadSettingsFromStorage().also { logd("SettingsManager: Settings from storage: %o", it) }
+            _settings.value = loadSettingsFromStorage()
           }
         }
 
