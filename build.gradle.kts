@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "org.jraf"
-version = "1.6.1"
+version = "1.6.2"
 
 tasks.register<Sync>("devDist") {
   listOf(

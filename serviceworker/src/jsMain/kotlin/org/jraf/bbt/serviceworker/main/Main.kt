@@ -100,6 +100,8 @@ fun registerSettingsListener() {
   }
 }
 
+private var lastSyncEnabled: Boolean? = null
+
 private fun onSyncEnabledChanged(syncEnabled: Boolean) {
   logd("syncEnabled changed: $syncEnabled")
   if (syncEnabled) {
@@ -108,15 +110,20 @@ private fun onSyncEnabledChanged(syncEnabled: Boolean) {
     stopScheduling()
     startScheduling()
 
-    // Sync now
-    GlobalScope.launch {
-      syncManager.syncFolders()
+    // Keep a memory cache of the last sync enabled state, so we don't sync every single time the extension comes alive.
+    // We should only sync when going from disabled to enabled.
+    if (lastSyncEnabled == false) {
+      GlobalScope.launch {
+        syncManager.syncFolders()
+      }
     }
   } else {
     logd("Sync disabled")
     updateBadge(false)
     stopScheduling()
   }
+
+  lastSyncEnabled = syncEnabled
 }
 
 private fun updateBadge(enabled: Boolean) {
