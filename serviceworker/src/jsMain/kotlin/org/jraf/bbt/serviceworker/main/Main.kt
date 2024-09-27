@@ -35,6 +35,7 @@ import chrome.alarms.AlarmCreateInfo
 import chrome.alarms.onAlarm
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.await
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -59,8 +60,14 @@ private val syncManager = SyncManager()
 fun main() {
   initLogs(logWithMessages = false, sourceName = "Core")
   logi("$EXTENSION_NAME $VERSION")
+  registerAlarmListener();
   registerMessageListener()
   registerSettingsListener()
+}
+
+private fun registerAlarmListener() {
+  onAlarm.removeListener(onAlarmTriggered)
+  onAlarm.addListener(onAlarmTriggered)
 }
 
 private fun registerMessageListener() {
@@ -102,12 +109,11 @@ fun registerSettingsListener() {
 
 private var lastSyncEnabled: Boolean? = null
 
-private fun onSyncEnabledChanged(syncEnabled: Boolean) {
+private suspend fun onSyncEnabledChanged(syncEnabled: Boolean) {
   logd("syncEnabled changed: $syncEnabled")
   if (syncEnabled) {
     logd("Sync enabled, scheduled every $SYNC_PERIOD_MINUTES minutes")
     updateBadge(true)
-    stopScheduling()
     startScheduling()
 
     // Keep a memory cache of the last sync enabled state, so we don't sync every single time the extension comes alive.
@@ -135,15 +141,20 @@ private fun updateBadge(enabled: Boolean) {
   }
 }
 
-private fun startScheduling() {
-  onAlarm.addListener(onAlarmTriggered)
-  chrome.alarms.create(
-    ALARM_NAME,
-    AlarmCreateInfo(
-      periodInMinutes = SYNC_PERIOD_MINUTES,
-      delayInMinutes = SYNC_PERIOD_MINUTES,
-    ),
-  )
+private suspend fun startScheduling() {
+  val existingAlarm = chrome.alarms.get(ALARM_NAME).await()
+  if (existingAlarm != null) {
+    logd("Alarm is already scheduled: ignore")
+  } else {
+    logd("Scheduling alarm")
+    chrome.alarms.create(
+      ALARM_NAME,
+      AlarmCreateInfo(
+        periodInMinutes = SYNC_PERIOD_MINUTES,
+        delayInMinutes = SYNC_PERIOD_MINUTES,
+      ),
+    ).await()
+  }
 }
 
 private fun stopScheduling() {

@@ -27,7 +27,13 @@
 
 package chrome.alarms
 
-external fun create(name: String, alarmInfo: AlarmCreateInfo)
+import kotlin.js.Promise
+
+external interface Alarm
+
+external fun get(name: String): Promise<Alarm?>
+
+external fun create(name: String, alarmInfo: AlarmCreateInfo): Promise<Unit>
 
 external fun clearAll()
 
