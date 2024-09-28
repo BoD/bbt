@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.6.3 - 2024-09-27
+
+- Try to fix an issue where periodic sync wouldn't be triggered, this time for real.
+
 ## v1.6.1 - 2024-08-10
 
 - Try to fix an issue where periodic sync wouldn't be triggered.
