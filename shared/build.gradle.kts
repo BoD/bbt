@@ -9,7 +9,7 @@ repositories {
 }
 
 // Generate a Version.kt file with a constant for the version name
-tasks.register("generateVersionKt") {
+val generateVersionKtTask = tasks.register("generateVersionKt") {
   val outputDir = layout.buildDirectory.dir("generated/source/kotlin").get().asFile
   outputs.dir(outputDir)
   doFirst {
@@ -30,7 +30,7 @@ kotlin {
   }
 
   sourceSets.commonMain {
-    kotlin.srcDir(tasks.getByName("generateVersionKt").outputs.files)
+    kotlin.srcDir(generateVersionKtTask)
 
     dependencies {
       api(KotlinX.coroutines.core)
