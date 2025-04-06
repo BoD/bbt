@@ -31,6 +31,7 @@ import chrome.action.BadgeBackgroundColor
 import chrome.action.BadgeText
 import chrome.action.setBadgeBackgroundColor
 import chrome.action.setBadgeText
+import chrome.alarms.Alarm
 import chrome.alarms.AlarmCreateInfo
 import chrome.alarms.onAlarm
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -49,6 +50,7 @@ import org.jraf.bbt.shared.logging.logi
 import org.jraf.bbt.shared.messaging.LogMessage
 import org.jraf.bbt.shared.messaging.asMessage
 import org.jraf.bbt.shared.settings.SettingsManager.Companion.settingsManager
+import kotlin.js.Promise
 
 private const val SYNC_PERIOD_MINUTES = 30
 
@@ -60,7 +62,7 @@ private val syncManager = SyncManager()
 fun main() {
   initLogs(logWithMessages = false, sourceName = "Core")
   logi("$EXTENSION_NAME $VERSION")
-  registerAlarmListener();
+  registerAlarmListener()
   registerMessageListener()
   registerSettingsListener()
 }
@@ -142,7 +144,20 @@ private fun updateBadge(enabled: Boolean) {
 }
 
 private suspend fun startScheduling() {
-  val existingAlarm = chrome.alarms.get(ALARM_NAME).await()
+  val getAlarmPromise: Promise<Alarm?> = chrome.alarms.get(ALARM_NAME).then {
+    console.log("then %o", it)
+    val res = if (it === undefined) {
+      null
+    } else {
+      it
+    }
+    console.log("then res %o", res)
+    res
+  }.catch {
+    console.log("catch %o", it)
+    null
+  }
+  val existingAlarm = getAlarmPromise.await()
   if (existingAlarm != null) {
     logd("Alarm is already scheduled: ignore")
   } else {

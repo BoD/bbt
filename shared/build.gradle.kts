@@ -27,6 +27,9 @@ val generateVersionKtTask = tasks.register("generateVersionKt") {
 kotlin {
   js {
     browser()
+    compilerOptions {
+      target.set("es2015")
+    }
   }
 
   sourceSets.commonMain {

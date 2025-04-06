@@ -25,7 +25,7 @@
 
 package org.jraf.bbt.offscreen
 
-import org.jraf.bbt.offscreen.domparser.DomParserBookmarkExtractor
+import org.jraf.bbt.shared.domparser.DomParserBookmarkExtractor
 import org.jraf.bbt.shared.logging.initLogs
 import org.jraf.bbt.shared.logging.logd
 import org.jraf.bbt.shared.messaging.OffscreenExtractBookmarksFromFeedMessage
