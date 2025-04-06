@@ -62,5 +62,9 @@ fun main() {
         // Ignore
       }
     }
+    // Return true to have the right to respond asynchronously
+    // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/runtime/onMessage#sending_an_asynchronous_response_using_sendresponse
+    // We respond synchronously, so we return false
+    return@addListener false
   }
 }

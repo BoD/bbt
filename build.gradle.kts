@@ -1,6 +1,7 @@
 plugins {
   kotlin("multiplatform").apply(false)
   kotlin("plugin.js-plain-objects").apply(false)
+  kotlin("plugin.serialization").apply(false)
   id("org.jetbrains.compose").apply(false)
   kotlin("plugin.compose").apply(false)
 }
@@ -8,12 +9,14 @@ plugins {
 group = "org.jraf"
 version = "1.6.3"
 
+val entryPointModules = listOf(
+  ":serviceworker",
+  ":popup",
+  ":offscreen",
+)
+
 tasks.register<Sync>("devDist") {
-  listOf(
-    ":serviceworker",
-    ":popup",
-    ":offscreen",
-  )
+  entryPointModules
     .map {
       project(it)
     }
@@ -24,12 +27,8 @@ tasks.register<Sync>("devDist") {
   into(layout.buildDirectory.dir("devDist"))
 }
 
-tasks.register<Zip>("dist") {
-  listOf(
-    ":serviceworker",
-    ":popup",
-    ":offscreen",
-  )
+tasks.register<Sync>("prodDist") {
+  entryPointModules
     .map {
       project(it)
     }
@@ -37,10 +36,33 @@ tasks.register<Zip>("dist") {
       dependsOn("${it.name}:jsBrowserDistribution")
       from(it.layout.buildDirectory.dir("dist/js/productionExecutable"))
     }
-  destinationDirectory.set(layout.buildDirectory.dir("dist"))
+  into(layout.buildDirectory.dir("prodDist"))
+}
+
+tasks.register<Zip>("prodDistZip") {
+  entryPointModules
+    .map {
+      project(it)
+    }
+    .forEach {
+      dependsOn("${it.name}:jsBrowserDistribution")
+      from(it.layout.buildDirectory.dir("dist/js/productionExecutable"))
+    }
+  destinationDirectory.set(layout.buildDirectory.dir("prodDist"))
 }
 
 
 // Run `./gradlew refreshVersions` to update dependencies
-// Run `./gradlew devDist` for tests (result is in build/devDist)
-// Run `./gradlew dist` to release (result is in build/dist/bbt-x.y.z.zip)
+
+// For dev:
+// Run `./gradlew devDist`
+// Result is in build/devDist
+
+// For release (Firefox self-distribution):
+// Run `./gradlew prodDist`
+// Result is in build/prodDist
+// Then run `web-ext sign --channel unlisted --api-key 'user:xyz' --api-secret 'xyz'
+
+// For release (Chrome and Firefox stores):
+// Run `./gradlew prodDistZip`
+// Result is in build/prodDist/bbt-x.y.z.zip

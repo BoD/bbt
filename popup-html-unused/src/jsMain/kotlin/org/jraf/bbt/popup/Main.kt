@@ -23,8 +23,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-@file:OptIn(DelicateCoroutinesApi::class)
-
 package org.jraf.bbt.popup
 
 import kotlinx.browser.document

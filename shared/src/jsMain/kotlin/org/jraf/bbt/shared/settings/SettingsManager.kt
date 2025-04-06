@@ -23,11 +23,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-@file:OptIn(DelicateCoroutinesApi::class)
-
 package org.jraf.bbt.shared.settings
 
-import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.await
 import kotlinx.coroutines.flow.Flow
@@ -73,6 +70,10 @@ class SettingsManager private constructor() {
           // Ignore
         }
       }
+      // Return true to have the right to respond asynchronously
+      // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/runtime/onMessage#sending_an_asynchronous_response_using_sendresponse
+      // We don't need to respond, so we return false
+      return@addListener false
     }
   }
 

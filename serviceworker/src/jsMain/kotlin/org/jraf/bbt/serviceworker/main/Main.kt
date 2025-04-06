@@ -23,8 +23,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-@file:OptIn(DelicateCoroutinesApi::class)
-
 package org.jraf.bbt.serviceworker.main
 
 import chrome.action.BadgeBackgroundColor
@@ -33,8 +31,8 @@ import chrome.action.setBadgeBackgroundColor
 import chrome.action.setBadgeText
 import chrome.alarms.AlarmCreateInfo
 import chrome.alarms.onAlarm
-import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.await
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -48,6 +46,7 @@ import org.jraf.bbt.shared.logging.logi
 import org.jraf.bbt.shared.messaging.LogMessage
 import org.jraf.bbt.shared.messaging.asMessage
 import org.jraf.bbt.shared.settings.SettingsManager.Companion.settingsManager
+import kotlin.js.Promise
 
 private const val SYNC_PERIOD_MINUTES = 30
 
@@ -85,6 +84,10 @@ private fun registerMessageListener() {
         // Ignore
       }
     }
+    // Return true to have the right to respond asynchronously
+    // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/runtime/onMessage#sending_an_asynchronous_response_using_sendresponse
+    // We don't need to respond, so we return false
+    return@addListener false
   }
 }
 
@@ -108,7 +111,7 @@ fun registerSettingsListener() {
 
 private var lastSyncEnabled: Boolean? = null
 
-private fun onSyncEnabledChanged(syncEnabled: Boolean) {
+private suspend fun onSyncEnabledChanged(syncEnabled: Boolean) {
   logd("syncEnabled changed: $syncEnabled")
   if (syncEnabled) {
     logd("Sync enabled, scheduled every $SYNC_PERIOD_MINUTES minutes")
@@ -140,23 +143,26 @@ private fun updateBadge(enabled: Boolean) {
   }
 }
 
-private fun startScheduling() {
+private suspend fun startScheduling() {
   // For some reason, calling .await() here crashes on Firefox ¯\_(ツ)_/¯
   // It's all right, just calling .then works.
-  chrome.alarms.get(ALARM_NAME).then {
-    if (it !== undefined && it != null) {
-      logd("Alarm is already scheduled: ignore")
-    } else {
-      logd("Scheduling alarm")
-      chrome.alarms.create(
-        ALARM_NAME,
-        AlarmCreateInfo(
-          periodInMinutes = SYNC_PERIOD_MINUTES,
-          delayInMinutes = SYNC_PERIOD_MINUTES,
-        ),
-      )
+  chrome.alarms.get(ALARM_NAME)
+    .then {
+      if (it !== undefined) {
+        logd("Alarm is already scheduled: ignore")
+        Promise.resolve(Unit)
+      } else {
+        logd("Scheduling alarm")
+        chrome.alarms.create(
+          ALARM_NAME,
+          AlarmCreateInfo(
+            periodInMinutes = SYNC_PERIOD_MINUTES,
+            delayInMinutes = SYNC_PERIOD_MINUTES,
+          ),
+        )
+      }
     }
-  }
+    .await()
 }
 
 private fun stopScheduling() {

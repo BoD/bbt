@@ -4,10 +4,6 @@ plugins {
   kotlin("plugin.serialization")
 }
 
-repositories {
-  mavenCentral()
-}
-
 // Generate a Version.kt file with a constant for the version name
 val generateVersionKtTask = tasks.register("generateVersionKt") {
   val outputDir = layout.buildDirectory.dir("generated/source/kotlin").get().asFile
@@ -17,7 +13,6 @@ val generateVersionKtTask = tasks.register("generateVersionKt") {
     File(outputWithPackageDir, "Version.kt").writeText(
       """
         package org.jraf.bbt.shared
-  
         const val VERSION = "v${rootProject.version}"
       """.trimIndent()
     )
@@ -29,15 +24,18 @@ kotlin {
     browser()
     compilerOptions {
       target.set("es2015")
+      optIn.addAll("kotlinx.coroutines.DelicateCoroutinesApi", "kotlinx.serialization.ExperimentalSerializationApi")
     }
   }
 
-  sourceSets.commonMain {
-    kotlin.srcDir(generateVersionKtTask)
+  sourceSets {
+    commonMain {
+      kotlin.srcDir(generateVersionKtTask)
 
-    dependencies {
-      api(KotlinX.coroutines.core)
-      api(KotlinX.serialization.json)
+      dependencies {
+        api(KotlinX.coroutines.core)
+        api(KotlinX.serialization.json)
+      }
     }
   }
 }
