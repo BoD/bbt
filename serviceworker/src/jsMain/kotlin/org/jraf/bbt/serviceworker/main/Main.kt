@@ -144,8 +144,8 @@ private fun updateBadge(enabled: Boolean) {
 }
 
 private suspend fun startScheduling() {
-  // For some reason, calling .await() here crashes on Firefox ¯\_(ツ)_/¯
-  // It's all right, just calling .then works.
+  // For some reason, calling alarms.get().await() crashes on Firefox ¯\_(ツ)_/¯
+  // But chaining with .then() works.
   chrome.alarms.get(ALARM_NAME)
     .then {
       if (it !== undefined) {
@@ -166,6 +166,5 @@ private suspend fun startScheduling() {
 }
 
 private fun stopScheduling() {
-  onAlarm.removeListener(onAlarmTriggered)
   chrome.alarms.clearAll()
 }
