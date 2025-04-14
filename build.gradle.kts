@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "org.jraf"
-version = "1.6.3"
+version = "1.7.0"
 
 val entryPointModules = listOf(
   ":serviceworker",

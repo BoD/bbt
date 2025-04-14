@@ -8,8 +8,8 @@ Ideal to share a bunch of bookmarks with your team at work, or your loved ones!
 
 ## Setup
 
-- Chrome: [Chrome Web Store](https://chrome.google.com/webstore/detail/plhhpanklegnkjipjebhdbcfdjdhkpfb).
-- Firefox: [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/bod-s-bookmark-tool/) (*).
+- Chrome: [Chrome Web Store](https://chrome.google.com/webstore/detail/plhhpanklegnkjipjebhdbcfdjdhkpfb)
+- Firefox: [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/bod-s-bookmark-tool/)
 
 ## Supported remote document formats
 
@@ -66,14 +66,9 @@ The "bookmarks" JSON format looks like this:
 
 - This is [Kotlin/JS project](https://kotlinlang.org/docs/reference/js-overview.html)
 - You will need a version of the [JDK](https://en.wikipedia.org/wiki/Java_Development_Kit) on your system
-- After cloning this repository, issue this command: `./gradlew dist`
-- This will compile and package the plugin, and the resulting `bbt-<version>.zip` file will be in the `build/dist` folder
+- After cloning this repository, issue this command: `./gradlew prodDistZip`
+- This will compile and package the plugin, and the resulting `bbt-<version>.zip` file will be in the `build/prodDist` folder
 
-##  * About the Firefox version
-
-As of now, the version for Firefox is no longer updated, as since Manifest v3, it is too hard to make
-a single extension that works on both Chrome and Firefox. The Firefox version is still available on the Firefox Add-ons site, but it is
-stuck at version 1.4.0.
 
 ## License
 
