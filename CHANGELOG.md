@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.7.9 - 2025-04-14
+
+- Add Firefox compatibility back.
+
 ## v1.6.3 - 2024-09-27
 
 - Try to fix an issue where periodic sync wouldn't be triggered, this time for real.
