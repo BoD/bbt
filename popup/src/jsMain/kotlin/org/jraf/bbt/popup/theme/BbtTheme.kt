@@ -29,7 +29,7 @@ import androidx.compose.foundation.LocalScrollbarStyle
 import androidx.compose.foundation.defaultScrollbarStyle
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.LocalMinimumInteractiveComponentEnforcement
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -38,6 +38,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
 
 private val lightScheme = lightColorScheme(
   primary = primaryLight,
@@ -130,7 +131,7 @@ fun BbtTheme(
   // See https://slack-chats.kotlinlang.org/t/22708259/-
   CompositionLocalProvider(
     LocalDensity provides Density(LocalDensity.current.density / 4f * 3f, 1f),
-    LocalMinimumInteractiveComponentEnforcement provides false
+    LocalMinimumInteractiveComponentSize provides Dp.Unspecified,
   ) {
     MaterialTheme(
       colorScheme = colorScheme,

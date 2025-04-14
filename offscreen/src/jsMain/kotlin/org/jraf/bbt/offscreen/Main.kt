@@ -25,7 +25,7 @@
 
 package org.jraf.bbt.offscreen
 
-import org.jraf.bbt.offscreen.domparser.DomParserBookmarkExtractor
+import org.jraf.bbt.shared.domparser.DomParserBookmarkExtractor
 import org.jraf.bbt.shared.logging.initLogs
 import org.jraf.bbt.shared.logging.logd
 import org.jraf.bbt.shared.messaging.OffscreenExtractBookmarksFromFeedMessage
@@ -62,5 +62,9 @@ fun main() {
         // Ignore
       }
     }
+    // Return true to have the right to respond asynchronously
+    // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/runtime/onMessage#sending_an_asynchronous_response_using_sendresponse
+    // We respond synchronously, so we return false
+    return@addListener false
   }
 }

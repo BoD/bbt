@@ -23,7 +23,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.jraf.bbt.offscreen.domparser
+package org.jraf.bbt.shared.domparser
 
 import org.jraf.bbt.shared.bookmarks.BookmarkItem
 import org.jraf.bbt.shared.bookmarks.BookmarksDocument

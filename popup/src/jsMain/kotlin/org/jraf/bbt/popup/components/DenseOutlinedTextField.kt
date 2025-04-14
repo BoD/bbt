@@ -144,16 +144,16 @@ fun DenseOutlinedTextField(
             bottom = 0.dp,
           ),
           container = {
-            OutlinedTextFieldDefaults.ContainerBox(
-              enabled,
-              isError,
-              interactionSource,
-              colors,
-              shape
+            OutlinedTextFieldDefaults.Container(
+              enabled = enabled,
+              isError = isError,
+              interactionSource = interactionSource,
+              colors = colors,
+              shape = shape,
             )
-          }
+          },
         )
-      }
+      },
     )
 
     if (supportingText != null) {

@@ -26,16 +26,19 @@
 package org.jraf.bbt.serviceworker.extract
 
 import chrome.offscreen.CreateParameters
-import chrome.offscreen.createDocument
 import chrome.runtime.ContextFilter
 import kotlinx.coroutines.await
 import org.jraf.bbt.shared.bookmarks.BookmarksDocument
 import org.jraf.bbt.shared.bookmarks.isValid
+import org.jraf.bbt.shared.domparser.DomParserBookmarkExtractor
 import org.jraf.bbt.shared.logging.logd
 import org.jraf.bbt.shared.logging.logw
 import org.jraf.bbt.shared.messaging.Messenger.Companion.messenger
 
 class BookmarkExtractor {
+  // This API is not available in Firefox
+  private val hasChromeOffscreen = js("""typeof chrome.offscreen""") != "undefined"
+
   suspend fun extractBookmarks(body: String, xPath: String?, documentUrl: String): BookmarksDocument? {
     var bookmarksDocument = extractBookmarksFromJson(body)
     if (bookmarksDocument != null) {
@@ -58,7 +61,7 @@ class BookmarkExtractor {
     bookmarksDocument = extractBookmarksFromHtml(
       body = body,
       xPath = xPath,
-      documentUrl = documentUrl
+      documentUrl = documentUrl,
     )
     if (bookmarksDocument != null) {
       return bookmarksDocument
@@ -94,8 +97,12 @@ class BookmarkExtractor {
    * Yes, this is convoluted :(. Thanks Chrome!
    */
   suspend fun extractBookmarksFromFeed(body: String): BookmarksDocument? {
-    ensureOffscreenDocumentCreated()
-    return messenger.sendOffscreenExtractBookmarksFromFeedMessage(body)
+    return if (hasChromeOffscreen) {
+      ensureOffscreenDocumentCreated()
+      return messenger.sendOffscreenExtractBookmarksFromFeedMessage(body)
+    } else {
+      DomParserBookmarkExtractor().extractBookmarksFromFeed(body)
+    }
   }
 
   /**
@@ -105,8 +112,12 @@ class BookmarkExtractor {
    * Yes, this is convoluted :(. Thanks Chrome!
    */
   suspend fun extractBookmarksFromOpml(body: String): BookmarksDocument? {
-    ensureOffscreenDocumentCreated()
-    return messenger.sendOffscreenExtractBookmarksFromOpmlMessage(body)
+    return if (hasChromeOffscreen) {
+      ensureOffscreenDocumentCreated()
+      messenger.sendOffscreenExtractBookmarksFromOpmlMessage(body)
+    } else {
+      DomParserBookmarkExtractor().extractBookmarksFromOpml(body)
+    }
   }
 
   /**
@@ -117,8 +128,12 @@ class BookmarkExtractor {
    * Yes, this is convoluted :(. Thanks Chrome!
    */
   suspend fun extractBookmarksFromHtml(body: String, xPath: String?, documentUrl: String): BookmarksDocument? {
-    ensureOffscreenDocumentCreated()
-    return messenger.sendOffscreenExtractBookmarksFromHtmlMessage(body, xPath, documentUrl)
+    return if (hasChromeOffscreen) {
+      ensureOffscreenDocumentCreated()
+      messenger.sendOffscreenExtractBookmarksFromHtmlMessage(body, xPath, documentUrl)
+    } else {
+      DomParserBookmarkExtractor().extractBookmarksFromHtml(body, xPath, documentUrl)
+    }
   }
 
   private suspend fun ensureOffscreenDocumentCreated() {
@@ -127,18 +142,17 @@ class BookmarkExtractor {
     val existingContexts = chrome.runtime.getContexts(
       ContextFilter(
         contextTypes = arrayOf("OFFSCREEN_DOCUMENT"),
-        documentUrls = arrayOf(fullyQualifiedPath)
-      )
+        documentUrls = arrayOf(fullyQualifiedPath),
+      ),
     ).await()
     if (existingContexts.isNotEmpty()) {
       return
     }
-    createDocument(
-      CreateParameters(
-        justification = "Parse DOM",
-        reasons = arrayOf("DOM_PARSER"),
-        url = offscreenRelativePath,
-      )
-    ).await()
+    val createParameters = CreateParameters(
+      justification = "Parse DOM",
+      reasons = arrayOf("DOM_PARSER"),
+      url = offscreenRelativePath,
+    )
+    chrome.offscreen.createDocument(createParameters).await()
   }
 }

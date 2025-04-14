@@ -4,24 +4,26 @@ plugins {
   kotlin("plugin.compose")
 }
 
-repositories {
-  mavenCentral()
-}
-
 kotlin {
   js {
     browser()
     binaries.executable()
+    compilerOptions {
+      target.set("es2015")
+      optIn.addAll("kotlinx.coroutines.DelicateCoroutinesApi", "kotlinx.serialization.ExperimentalSerializationApi")
+    }
   }
 
   sourceSets {
-    commonMain.dependencies {
-      implementation(compose.foundation)
-      implementation(compose.material3)
-      implementation(compose.ui)
-      implementation(compose.components.resources)
+    commonMain {
+      dependencies {
+        implementation(compose.foundation)
+        implementation(compose.material3)
+        implementation(compose.ui)
+        implementation(compose.components.resources)
 
-      implementation(project(":shared"))
+        implementation(project(":shared"))
+      }
     }
   }
 }

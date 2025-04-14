@@ -23,10 +23,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-@file:JsQualifier("chrome.offscreen")
+// XXX This API is not available in Firefox, and using @JsQualifier generates a reference in an 'imports' section, resulting in
+// `chrome.offscreen is undefined`.
+// Using @JsName instead as a workaround - see https://slack-chats.kotlinlang.org/t/27344934/x
+//@file:JsQualifier("chrome.offscreen")
 
 package chrome.offscreen
 
 import kotlin.js.Promise
 
+@JsName("chrome.offscreen.createDocument")
 external fun createDocument(parameters: CreateParameters): Promise<Unit>

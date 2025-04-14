@@ -23,8 +23,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-@file:OptIn(DelicateCoroutinesApi::class)
-
 package org.jraf.bbt.serviceworker.main
 
 import chrome.action.BadgeBackgroundColor
@@ -33,7 +31,6 @@ import chrome.action.setBadgeBackgroundColor
 import chrome.action.setBadgeText
 import chrome.alarms.AlarmCreateInfo
 import chrome.alarms.onAlarm
-import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.await
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -49,6 +46,7 @@ import org.jraf.bbt.shared.logging.logi
 import org.jraf.bbt.shared.messaging.LogMessage
 import org.jraf.bbt.shared.messaging.asMessage
 import org.jraf.bbt.shared.settings.SettingsManager.Companion.settingsManager
+import kotlin.js.Promise
 
 private const val SYNC_PERIOD_MINUTES = 30
 
@@ -60,7 +58,7 @@ private val syncManager = SyncManager()
 fun main() {
   initLogs(logWithMessages = false, sourceName = "Core")
   logi("$EXTENSION_NAME $VERSION")
-  registerAlarmListener();
+  registerAlarmListener()
   registerMessageListener()
   registerSettingsListener()
 }
@@ -78,7 +76,7 @@ private fun registerMessageListener() {
           source = message.source,
           level = LogLevel.entries.first { it.ordinal == message.level },
           format = message.format,
-          params = message.params
+          params = message.params,
         )
       }
 
@@ -86,6 +84,10 @@ private fun registerMessageListener() {
         // Ignore
       }
     }
+    // Return true to have the right to respond asynchronously
+    // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/runtime/onMessage#sending_an_asynchronous_response_using_sendresponse
+    // We don't need to respond, so we return false
+    return@addListener false
   }
 }
 
@@ -142,22 +144,27 @@ private fun updateBadge(enabled: Boolean) {
 }
 
 private suspend fun startScheduling() {
-  val existingAlarm = chrome.alarms.get(ALARM_NAME).await()
-  if (existingAlarm != null) {
-    logd("Alarm is already scheduled: ignore")
-  } else {
-    logd("Scheduling alarm")
-    chrome.alarms.create(
-      ALARM_NAME,
-      AlarmCreateInfo(
-        periodInMinutes = SYNC_PERIOD_MINUTES,
-        delayInMinutes = SYNC_PERIOD_MINUTES,
-      ),
-    ).await()
-  }
+  // For some reason, calling alarms.get().await() crashes on Firefox ¯\_(ツ)_/¯
+  // But chaining with .then() works.
+  chrome.alarms.get(ALARM_NAME)
+    .then {
+      if (it !== undefined) {
+        logd("Alarm is already scheduled: ignore")
+        Promise.resolve(Unit)
+      } else {
+        logd("Scheduling alarm")
+        chrome.alarms.create(
+          ALARM_NAME,
+          AlarmCreateInfo(
+            periodInMinutes = SYNC_PERIOD_MINUTES,
+            delayInMinutes = SYNC_PERIOD_MINUTES,
+          ),
+        )
+      }
+    }
+    .await()
 }
 
 private fun stopScheduling() {
-  onAlarm.removeListener(onAlarmTriggered)
   chrome.alarms.clearAll()
 }
