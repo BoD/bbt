@@ -3,14 +3,15 @@ plugins {
   kotlin("plugin.js-plain-objects")
 }
 
-// Replace the version in the manifest with the version defined in gradle
-tasks.register("replaceVersionInManifest") {
-  val manifestFile = layout.projectDirectory.dir("src/jsMain/resources/manifest.json").asFile
-  outputs.file(manifestFile)
+// Replace the version in the manifest with the project's version
+val replaceVersionInManifestTask = tasks.register("replaceVersionInManifest") {
+  val manifestFile = layout.projectDirectory.dir("src/manifest.json").asFile
+  val outputDir = layout.buildDirectory.dir("generated/resources").get().asFile
+  outputs.dir(outputDir)
   doFirst {
     var contents = manifestFile.readText()
-    contents = contents.replace(Regex(""""version": "(.*)""""), """"version": "${rootProject.version}"""")
-    manifestFile.writeText(contents)
+      .replace("{VERSION}", rootProject.version.toString())
+    File(outputDir, "manifest.json").writeText(contents)
   }
 }
 
@@ -31,6 +32,8 @@ kotlin {
 
   sourceSets {
     commonMain {
+      resources.srcDir(replaceVersionInManifestTask)
+
       dependencies {
         implementation(project(":shared"))
       }
