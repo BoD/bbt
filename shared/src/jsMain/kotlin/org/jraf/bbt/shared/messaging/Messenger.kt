@@ -31,23 +31,12 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromDynamic
 import kotlinx.serialization.json.encodeToDynamic
 import org.jraf.bbt.shared.bookmarks.BookmarksDocument
-import org.jraf.bbt.shared.logging.LogLevel
 import kotlin.js.Promise
 
 class Messenger private constructor() {
   @OptIn(ExperimentalSerializationApi::class)
   private fun sendMessage(message: Message): Promise<Any?> {
     return chrome.runtime.sendMessage(Json.encodeToDynamic(message))
-  }
-
-  fun sendLogMessage(source: String, level: LogLevel, format: String, params: Array<out Any?>) {
-    val message = LogMessage(
-      source = source,
-      level = level.ordinal,
-      format = format,
-      params = params,
-    )
-    sendMessage(message)
   }
 
   fun sendSettingsChangedMessage() {

@@ -26,7 +26,6 @@
 package org.jraf.bbt.offscreen
 
 import org.jraf.bbt.shared.domparser.DomParserBookmarkExtractor
-import org.jraf.bbt.shared.logging.initLogs
 import org.jraf.bbt.shared.logging.logd
 import org.jraf.bbt.shared.messaging.OffscreenExtractBookmarksFromFeedMessage
 import org.jraf.bbt.shared.messaging.OffscreenExtractBookmarksFromHtmlMessage
@@ -36,7 +35,6 @@ import org.jraf.bbt.shared.messaging.asMessage
 private val domParserBookmarkExtractor = DomParserBookmarkExtractor()
 
 fun main() {
-  initLogs(logWithMessages = true, sourceName = "Offscreen")
   logd("main")
   chrome.runtime.onMessage.addListener { msg, _, sendResponse ->
     when (val message = msg.asMessage()) {

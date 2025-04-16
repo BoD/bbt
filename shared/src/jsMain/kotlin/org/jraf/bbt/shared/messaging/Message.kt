@@ -25,24 +25,10 @@
 
 package org.jraf.bbt.shared.messaging
 
-import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
 
 @Serializable
 sealed class Message
-
-@Serializable
-class LogMessage(
-  val source: String,
-  val level: Int,
-  val format: String,
-  val params: Array<out @Serializable(with = JsonStringAnySerializer::class) Any?>,
-) : Message()
 
 @Serializable
 data object SettingsChangedMessage : Message()
@@ -59,16 +45,3 @@ class OffscreenExtractBookmarksFromHtmlMessage(
   val xPath: String?,
   val documentUrl: String,
 ) : Message()
-
-
-private object JsonStringAnySerializer : KSerializer<Any> {
-  override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("Any", PrimitiveKind.STRING)
-
-  override fun serialize(encoder: Encoder, value: Any) {
-    encoder.encodeString(JSON.stringify(value))
-  }
-
-  override fun deserialize(decoder: Decoder): Any {
-    return JSON.parse(decoder.decodeString())
-  }
-}

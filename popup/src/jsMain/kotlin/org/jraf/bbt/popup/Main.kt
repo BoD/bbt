@@ -41,7 +41,6 @@ import kotlinx.coroutines.launch
 import org.jetbrains.skiko.wasm.onWasmReady
 import org.jraf.bbt.popup.theme.BbtTheme
 import org.jraf.bbt.shared.bookmarks.BookmarkManager.Companion.bookmarkManager
-import org.jraf.bbt.shared.logging.initLogs
 import org.jraf.bbt.shared.logging.logd
 import org.jraf.bbt.shared.settings.SettingsManager.Companion.settingsManager
 import org.jraf.bbt.shared.settings.model.SyncItem
@@ -50,7 +49,6 @@ import org.jraf.bbt.shared.util.isValidUrl
 
 // This is executed every time popup.html is opened.
 fun main() {
-  initLogs(logWithMessages = true, sourceName = "Popup")
   logd("Popup open")
 
   onWasmReady {

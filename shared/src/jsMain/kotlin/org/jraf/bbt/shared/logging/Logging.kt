@@ -25,7 +25,6 @@
 
 package org.jraf.bbt.shared.logging
 
-import org.jraf.bbt.shared.messaging.Messenger.Companion.messenger
 import kotlin.js.Date
 
 enum class LogLevel {
@@ -34,41 +33,21 @@ enum class LogLevel {
   WARN,
 }
 
-private var _logWithMessages = false
-private var _sourceName = "Unknown"
-
-fun initLogs(logWithMessages: Boolean, sourceName: String) {
-  _logWithMessages = logWithMessages
-  _sourceName = sourceName
-}
-
 fun log(
-  source: String,
   level: LogLevel,
   format: String,
   vararg params: Any?,
 ) {
-  if (_logWithMessages) {
-    // Send the log to the service worker console
-    messenger.sendLogMessage(
-      source = _sourceName,
-      level = level,
-      format = format,
-      params = params
-    )
-  } else {
-    val date = Date()
-    when (level) {
-      LogLevel.DEBUG -> console.log("${date.toLocaleDateString()} ${date.toLocaleTimeString()} - $source - $format", *params)
-      LogLevel.INFO -> console.info("${date.toLocaleDateString()} ${date.toLocaleTimeString()} - $source - $format", *params)
-      LogLevel.WARN -> console.warn("${date.toLocaleDateString()} ${date.toLocaleTimeString()} - $source - $format", *params)
-    }
+  val date = Date()
+  when (level) {
+    LogLevel.DEBUG -> console.log("${date.toLocaleDateString()} ${date.toLocaleTimeString()} - $format", *params)
+    LogLevel.INFO -> console.info("${date.toLocaleDateString()} ${date.toLocaleTimeString()} - $format", *params)
+    LogLevel.WARN -> console.warn("${date.toLocaleDateString()} ${date.toLocaleTimeString()} - $format", *params)
   }
 }
 
 fun logd(format: String, vararg params: Any?) {
   log(
-    source = _sourceName,
     level = LogLevel.DEBUG,
     format = format,
     params = params,
@@ -77,7 +56,6 @@ fun logd(format: String, vararg params: Any?) {
 
 fun logi(format: String, vararg params: Any?) {
   log(
-    source = _sourceName,
     level = LogLevel.INFO,
     format = format,
     params = params,
@@ -86,7 +64,6 @@ fun logi(format: String, vararg params: Any?) {
 
 fun logw(format: String, vararg params: Any?) {
   log(
-    source = _sourceName,
     level = LogLevel.WARN,
     format = format,
     params = params,

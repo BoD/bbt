@@ -38,13 +38,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.jraf.bbt.shared.EXTENSION_NAME
 import org.jraf.bbt.shared.VERSION
-import org.jraf.bbt.shared.logging.LogLevel
-import org.jraf.bbt.shared.logging.initLogs
-import org.jraf.bbt.shared.logging.log
 import org.jraf.bbt.shared.logging.logd
 import org.jraf.bbt.shared.logging.logi
-import org.jraf.bbt.shared.messaging.LogMessage
-import org.jraf.bbt.shared.messaging.asMessage
 import org.jraf.bbt.shared.settings.SettingsManager.Companion.settingsManager
 import kotlin.js.Promise
 
@@ -56,39 +51,14 @@ private val syncManager = SyncManager()
 
 // This is executed once when the extension starts
 fun main() {
-  initLogs(logWithMessages = false, sourceName = "Core")
   logi("$EXTENSION_NAME $VERSION")
   registerAlarmListener()
-  registerMessageListener()
   registerSettingsListener()
 }
 
 private fun registerAlarmListener() {
   onAlarm.removeListener(onAlarmTriggered)
   onAlarm.addListener(onAlarmTriggered)
-}
-
-private fun registerMessageListener() {
-  chrome.runtime.onMessage.addListener { msg, _, _ ->
-    when (val message = msg.asMessage()) {
-      is LogMessage -> {
-        log(
-          source = message.source,
-          level = LogLevel.entries.first { it.ordinal == message.level },
-          format = message.format,
-          params = message.params,
-        )
-      }
-
-      else -> {
-        // Ignore
-      }
-    }
-    // Return true to have the right to respond asynchronously
-    // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/runtime/onMessage#sending_an_asynchronous_response_using_sendresponse
-    // We don't need to respond, so we return false
-    return@addListener false
-  }
 }
 
 private val onAlarmTriggered: () -> Unit = {
