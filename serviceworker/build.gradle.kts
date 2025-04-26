@@ -9,7 +9,7 @@ val replaceVersionInManifestTask = tasks.register("replaceVersionInManifest") {
   val outputDir = layout.buildDirectory.dir("generated/resources").get().asFile
   outputs.dir(outputDir)
   doFirst {
-    var contents = manifestFile.readText()
+    val contents = manifestFile.readText()
       .replace("{VERSION}", rootProject.version.toString())
     File(outputDir, "manifest.json").writeText(contents)
   }
