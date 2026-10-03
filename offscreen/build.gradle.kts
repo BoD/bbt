@@ -1,10 +1,16 @@
 plugins {
-  kotlin("multiplatform")
+  alias(libs.plugins.kotlin.multiplatform)
 }
 
 kotlin {
   js {
-    browser()
+    browser {
+      commonWebpackConfig {
+        // Extension CSP forbids eval-based source maps.
+        // See https://stackoverflow.com/questions/48047150/chrome-extension-compiled-by-webpack-throws-unsafe-eval-error
+        devtool = "cheap-module-source-map"
+      }
+    }
     binaries.executable()
     compilerOptions {
       target.set("es2015")

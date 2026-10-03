@@ -1,6 +1,10 @@
 # Changelog
 
-## v1.7.9 - 2025-04-14
+## v1.7.1 - 2026-10-03
+
+- Dependency updates.
+
+## v1.7.0 - 2025-04-14
 
 - Add Firefox compatibility back.
 

@@ -1,13 +1,13 @@
 plugins {
-  kotlin("multiplatform").apply(false)
-  kotlin("plugin.js-plain-objects").apply(false)
-  kotlin("plugin.serialization").apply(false)
-  id("org.jetbrains.compose").apply(false)
-  kotlin("plugin.compose").apply(false)
+  alias(libs.plugins.kotlin.multiplatform).apply(false)
+  alias(libs.plugins.kotlin.jsPlainObjects).apply(false)
+  alias(libs.plugins.kotlin.serialization).apply(false)
+  alias(libs.plugins.compose).apply(false)
+  alias(libs.plugins.kotlin.compose).apply(false)
 }
 
 group = "org.jraf"
-version = "1.7.0"
+version = "1.7.1"
 
 val entryPointModules = listOf(
   ":serviceworker",
