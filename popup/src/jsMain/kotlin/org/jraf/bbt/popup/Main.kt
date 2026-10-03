@@ -23,7 +23,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-@file:OptIn(ExperimentalComposeUiApi::class, DelicateCoroutinesApi::class)
+@file:OptIn(DelicateCoroutinesApi::class)
 
 package org.jraf.bbt.popup
 
@@ -31,9 +31,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.window.CanvasBasedWindow
+import androidx.compose.ui.window.ComposeViewport
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.first
@@ -52,8 +51,7 @@ fun main() {
   logd("Popup open")
 
   onWasmReady {
-    @OptIn(ExperimentalComposeUiApi::class)
-    CanvasBasedWindow(canvasElementId = "ComposeTarget") {
+    ComposeViewport {
       val settings by settingsManager.settings.collectAsState(null)
       BbtTheme {
         Surface(Modifier.fillMaxSize()) {

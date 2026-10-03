@@ -1,11 +1,11 @@
 plugins {
-  kotlin("multiplatform")
-  kotlin("plugin.js-plain-objects")
-  kotlin("plugin.serialization")
+  alias(libs.plugins.kotlin.multiplatform)
+  alias(libs.plugins.kotlin.jsPlainObjects)
+  alias(libs.plugins.kotlin.serialization)
 }
 
 // Generate a Version.kt file with a constant for the version name
-val generateVersionKtTask = tasks.register("generateVersionKt") {
+val generateVersionKtTask: TaskProvider<Task> = tasks.register("generateVersionKt") {
   val outputDir = layout.buildDirectory.dir("generated/source/kotlin").get().asFile
   outputs.dir(outputDir)
   doFirst {
@@ -21,7 +21,13 @@ val generateVersionKtTask = tasks.register("generateVersionKt") {
 
 kotlin {
   js {
-    browser()
+    browser {
+      commonWebpackConfig {
+        // Extension CSP forbids eval-based source maps.
+        // See https://stackoverflow.com/questions/48047150/chrome-extension-compiled-by-webpack-throws-unsafe-eval-error
+        devtool = "cheap-module-source-map"
+      }
+    }
     compilerOptions {
       target.set("es2015")
       optIn.addAll("kotlinx.coroutines.DelicateCoroutinesApi", "kotlinx.serialization.ExperimentalSerializationApi")
@@ -33,8 +39,8 @@ kotlin {
       kotlin.srcDir(generateVersionKtTask)
 
       dependencies {
-        api(KotlinX.coroutines.core)
-        api(KotlinX.serialization.json)
+        api(libs.kotlinx.coroutines.core)
+        api(libs.kotlinx.serialization.json)
       }
     }
   }

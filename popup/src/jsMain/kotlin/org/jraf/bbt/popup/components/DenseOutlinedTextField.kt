@@ -111,7 +111,7 @@ fun DenseOutlinedTextField(
       enabled = enabled,
       readOnly = readOnly,
       textStyle = mergedTextStyle,
-      cursorBrush = SolidColor(colors.cursorColor(isError).value),
+      cursorBrush = SolidColor(colors.cursorColor(isError)),
       visualTransformation = visualTransformation,
       keyboardOptions = keyboardOptions,
       keyboardActions = keyboardActions,
@@ -137,7 +137,7 @@ fun DenseOutlinedTextField(
           isError = isError,
           interactionSource = interactionSource,
           colors = colors,
-          contentPadding = OutlinedTextFieldDefaults.contentPadding(
+          contentPadding = OutlinedTextFieldDefaults.contentPaddingWithoutLabel(
             start = 8.dp,
             top = 0.dp,
             end = 8.dp,
@@ -191,10 +191,10 @@ private fun TextFieldColors.textColor(
   return rememberUpdatedState(targetValue)
 }
 
-@Composable
-private fun TextFieldColors.cursorColor(isError: Boolean): State<Color> {
-  return rememberUpdatedState(if (isError) errorCursorColor else cursorColor)
-}
+//@Composable
+//private fun TextFieldColors.cursorColor(isError: Boolean): State<Color> {
+//  return rememberUpdatedState(if (isError) errorCursorColor else cursorColor)
+//}
 
 @Composable
 private fun TextFieldColors.supportingTextColor(
